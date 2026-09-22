@@ -1,0 +1,13 @@
+import{addDoc,collection,deleteDoc,doc,getDocs,onSnapshot,serverTimestamp,setDoc,updateDoc}from"firebase/firestore";import{db}from"../firebase";import{queueWrite}from"../offlineQueue";
+const guard=()=>{if(!db)throw new Error("Firebase is not configured.")};
+const path=(uid,type)=>collection(db,"users",uid,type);
+export const saveProfile=async(user)=>{guard();return setDoc(doc(db,"users",user.uid),{displayName:user.displayName||"",email:user.email||"",photoURL:user.photoURL||"",updatedAt:serverTimestamp()},{merge:true})};
+export const createRecord=async(uid,type,data)=>{guard();if(!navigator.onLine){queueWrite({op:"create",uid,type,data});return{offline:true}}return addDoc(path(uid,type),{...data,createdAt:serverTimestamp(),updatedAt:serverTimestamp()})};
+export const updateRecord=async(uid,type,id,data)=>{guard();if(!navigator.onLine){queueWrite({op:"update",uid,type,id,data});return{offline:true}}return updateDoc(doc(db,"users",uid,type,id),{...data,updatedAt:serverTimestamp()})};
+export const deleteRecord=async(uid,type,id)=>{guard();if(!navigator.onLine){queueWrite({op:"delete",uid,type,id});return{offline:true}}return deleteDoc(doc(db,"users",uid,type,id))};
+export const listRecords=async(uid,type)=>{guard();const s=await getDocs(path(uid,type));return s.docs.map(d=>({id:d.id,...d.data()}))};
+export const watchRecords=(uid,type,onData,onError)=>{if(!db){onError?.(new Error("Firebase is not configured."));return()=>{}};return onSnapshot(path(uid,type),s=>onData(s.docs.map(d=>({id:d.id,...d.data()}))),onError)};
+export const saveCalculation=(uid,data)=>createRecord(uid,"history",data);
+export const saveProject=(uid,data)=>createRecord(uid,"projects",data);
+export const saveEstimate=(uid,data)=>createRecord(uid,"estimates",data);
+export const saveCuttingList=(uid,data)=>createRecord(uid,"cuttingLists",data);
