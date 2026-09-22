@@ -1,16 +1,45 @@
 rules_version = '2';
 service cloud.firestore {
  match /databases/{database}/documents {
-  function signedIn(){return request.auth!=null;}
-  function own(uid){return signedIn()&&request.auth.uid==uid;}
-  function validTimestamps(){return request.resource.data.createdAt is timestamp && request.resource.data.updatedAt is timestamp;}
-  match /users/{uid}{
-   allow read,create,update: if own(uid);
+  function signedIn(){return request.auth != null;}
+  function own(uid){return signedIn() && request.auth.uid == uid;}
+  function ts(){return request.resource.data.createdAt is timestamp && request.resource.data.updatedAt is timestamp;}
+  function versioned(){return request.resource.data.version is int && request.resource.data.version >= 1 && request.resource.data.lastModifiedBy == request.auth.uid;}
+  function validProject(){return request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 200 && request.resource.data.status in ["Planning","In Progress","Completed","Cancelled"];}
+  function validEstimate(){return request.resource.data.projectId is string && request.resource.data.grandTotal is number && request.resource.data.grandTotal >= 0;}
+  function validCut(){return request.resource.data.projectId is string && request.resource.data.q is number && request.resource.data.q > 0;}
+  match /users/{uid} {
+   allow read, create, update: if own(uid);
    allow delete: if false;
-   match /{sub=**}/{docId}{
-    allow read,delete: if own(uid);
-    allow create,update: if own(uid) && validTimestamps();
+   match /preferences/{id} {
+    allow read, delete: if own(uid);
+    allow create, update: if own(uid) && ts();
    }
-  }
+   match /history/{id} {
+    allow read, delete: if own(uid);
+    allow create, update: if own(uid) && ts();
+   }
+   match /projects/{pid} {
+    allow read: if own(uid);
+    allow create: if own(uid) && ts() && versioned() && validProject();
+    allow update: if own(uid) && ts() && versioned() && validProject();
+    allow delete: if own(uid);
+    match /measurements/{id} {
+     allow read, delete: if own(uid);
+     allow create, update: if own(uid) && ts() && versioned();
+    }
+    match /calculations/{id} {
+     allow read, delete: if own(uid);
+     allow create, update: if own(uid) && ts() && versioned();
+    }
+    match /cuttingLists/{id} {
+     allow read, delete: if own(uid);
+     allow create, update: if own(uid) && ts() && versioned() && validCut();
+    }
+    match /estimates/{id} {
+     allow read, delete: if own(uid);
+     allow create, update: if own(uid) && ts() && versioned() && validEstimate();
+    }
+   }
  }
 }
