@@ -1,0 +1,15 @@
+const num=v=>{const n=Number(v);return Number.isFinite(n)?n:0};
+export const unitToInches=(value,unit)=>{const n=num(value);return unit==="ft"?n*12:unit==="cm"?n/2.54:unit==="mm"?n/25.4:unit==="m"?n*39.37007874015748:n};
+export const inchesToFeet=v=>num(v)/12;
+export const calculateCFT=({length,width,thickness,unit="in",quantity=1})=>{const l=unitToInches(length,unit),w=unitToInches(width,unit),t=unitToInches(thickness,unit),q=Math.max(0,num(quantity));return l*w*t*q/1728};
+export const calculateBoardFeet=({length,width,thickness,quantity=1})=>num(length)*num(width)*num(thickness)*Math.max(0,num(quantity))/144;
+export const calculateArea=(length,width,quantity=1)=>num(length)*num(width)*Math.max(0,num(quantity));
+export const calculateVolume=(length,width,thickness,quantity=1)=>num(length)*num(width)*num(thickness)*Math.max(0,num(quantity));
+export const calculateWaste=(quantity,wastePercent)=>{const q=Math.max(0,num(quantity)),p=Math.max(0,num(wastePercent))/100;return{waste:q*p,total:q*(1+p)}};
+export const calculateDoor=({height,width,thickness,quantity=1,unit="in"})=>({area:calculateArea(unitToInches(height,unit),unitToInches(width,unit),quantity),volume:calculateCFT({length:height,width,thickness,unit,quantity})});
+export const calculateWindowFrame=({height,width,frameWidth,quantity=1,unit="in"})=>{const h=unitToInches(height,unit),w=unitToInches(width,unit),f=unitToInches(frameWidth,unit),q=Math.max(0,num(quantity));return{openingArea:h*w*q,frameRun:2*(h+w)*q,frameArea:2*(h+w)*f*q}};
+export const calculateTabletop=({length,width,thickness,quantity=1,unit="in"})=>({area:calculateArea(unitToInches(length,unit),unitToInches(width,unit),quantity),volume:calculateCFT({length,width,thickness,unit,quantity})});
+export const calculateShelf=({length,width,thickness,shelves=1,unit="in"})=>({area:calculateArea(unitToInches(length,unit),unitToInches(width,unit),shelves),volume:calculateCFT({length,width,thickness,unit,quantity:shelves})});
+export const calculatePanel=({length,width,quantity=1,unit="in"})=>({area:calculateArea(unitToInches(length,unit),unitToInches(width,unit),quantity)});
+export const calculateDrawer=({length,width,height,quantity=1,unit="in"})=>({boxVolume:calculateCFT({length,width,thickness:height,unit,quantity})});
+export const round4=v=>Number(num(v).toFixed(4));
