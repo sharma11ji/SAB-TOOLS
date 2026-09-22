@@ -1,19 +1,22 @@
-import{addDoc,collection,deleteDoc,doc,getDocs,onSnapshot,serverTimestamp,setDoc,updateDoc,query,orderBy}from"firebase/firestore";import{db}from"./firebase";
+import{collection,deleteDoc,doc,getDoc,getDocs,onSnapshot,orderBy,query,runTransaction,serverTimestamp,setDoc,where}from"firebase/firestore";
+import{db}from"./firebase";
 const guard=()=>{if(!db)throw new Error("Firebase is not configured.")};
+const userDoc=(uid,id)=>doc(db,"users",uid,id);
 const col=(uid,name)=>collection(db,"users",uid,name);
-const clean=data=>Object.fromEntries(Object.entries(data).filter(([,v])=>v!==undefined));
-export async function saveProfile(uid,data){guard();return setDoc(doc(db,"users",uid),clean({...data,updatedAt:serverTimestamp()}),{merge:true})}
-export async function saveHistory(uid,data){guard();return addDoc(col(uid,"history"),{...clean(data),createdAt:serverTimestamp(),updatedAt:serverTimestamp()})}
-export async function listHistory(uid){guard();const s=await getDocs(query(col(uid,"history"),orderBy("createdAt","desc")));return s.docs.map(d=>({id:d.id,...d.data()}))}
-export function watchHistory(uid,cb){guard();return onSnapshot(query(col(uid,"history"),orderBy("createdAt","desc")),s=>cb(s.docs.map(d=>({id:d.id,...d.data()}))))}
+const projectCol=(uid,pid,name)=>collection(db,"users",uid,"projects",pid,name);
+const clean=data=>Object.fromEntries(Object.entries(data||{}).filter(([,v])=>v!==undefined));
+const stamp=(data,isNew)=>({...clean(data),updatedAt:serverTimestamp(),...(isNew?{createdAt:serverTimestamp()}:{})});
+export async function saveProfile(uid,data){guard();return setDoc(doc(db,"users",uid),stamp(data,false),{merge:true})}
+export function watchHistory(uid,cb){guard();return onSnapshot(query(col(uid,"history"),orderBy("createdAt","desc")),s=>cb(s.docs.map(d=>({id:d.id,...d.data()}))),e=>cb([],e))}
+export function watchProjects(uid,cb){guard();return onSnapshot(query(col(uid,"projects"),orderBy("updatedAt","desc")),s=>cb(s.docs.map(d=>({id:d.id,...d.data()}))),e=>cb([],e))}
+export async function saveHistory(uid,data,meta={}){guard();const ref=meta.id?doc(db,"users",uid,"history",meta.id):doc(col(uid,"history"));const payload={...clean(data),operationId:meta.operationId||crypto.randomUUID(),revision:meta.revision||1};await setDoc(ref,stamp(payload,!meta.id),{merge:true});return ref.id}
 export async function removeHistory(uid,id){guard();return deleteDoc(doc(db,"users",uid,"history",id))}
-export async function saveProject(uid,data,id){guard();const ref=id?doc(db,"users",uid,"projects",id):doc(col(uid,"projects"));await setDoc(ref,{...clean(data),updatedAt:serverTimestamp(),...(id?{}:{createdAt:serverTimestamp()})},{merge:true});return ref.id}
-export async function deleteProject(uid,id){guard();return deleteDoc(doc(db,"users",uid,"projects",id))}
-export function watchProjects(uid,cb){guard();return onSnapshot(query(col(uid,"projects"),orderBy("updatedAt","desc")),s=>cb(s.docs.map(d=>({id:d.id,...d.data()}))))}
-export async function saveCuttingList(uid,projectId,data,id){guard();const ref=id?doc(db,"users",uid,"projects",projectId,"cuttingLists",id):doc(db,"users",uid,"projects",projectId,"cuttingLists",id||crypto.randomUUID());await setDoc(ref,{...clean(data),updatedAt:serverTimestamp(),...(id?{}:{createdAt:serverTimestamp()})},{merge:true});return ref.id}
-export async function deleteCuttingList(uid,projectId,id){guard();return deleteDoc(doc(db,"users",uid,"projects",projectId,"cuttingLists",id))}
-export async function saveEstimate(uid,projectId,data,id){guard();const ref=id?doc(db,"users",uid,"estimates",id):doc(col(uid,"estimates"));await setDoc(ref,{...clean(data),projectId:projectId||null,updatedAt:serverTimestamp(),...(id?{}:{createdAt:serverTimestamp()})},{merge:true});return ref.id}
-export async function deleteEstimate(uid,id){guard();return deleteDoc(doc(db,"users",uid,"estimates",id))}
-
-export async function listCuttingLists(uid,projectId){guard();const s=await getDocs(query(collection(db,"users",uid,"projects",projectId,"cuttingLists"),orderBy("updatedAt","desc")));return s.docs.map(d=>({id:d.id,...d.data()}))}
-export async function listEstimates(uid,projectId){guard();const s=await getDocs(query(col(uid,"estimates"),orderBy("updatedAt","desc")));return s.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.projectId===projectId)}
+export async function saveProject(uid,data,id,expectedVersion=null,meta={}){guard();const ref=id?doc(db,"users",uid,"projects",id):doc(col(uid,"projects"));return runTransaction(db,async tx=>{const snap=await tx.get(ref);if(snap.exists()&&expectedVersion!=null&&snap.data().version!==expectedVersion)throw new Error("CONFLICT");const current=snap.exists()?snap.data():{};const version=(current.version||0)+1;tx.set(ref,{...clean(data),version,lastModifiedBy:uid,operationId:meta.operationId||crypto.randomUUID(),...stamp({},!snap.exists())},{merge:true});return{ id:ref.id,version}})}
+export async function deleteProject(uid,id,expectedVersion=null){guard();const ref=doc(db,"users",uid,"projects",id);return runTransaction(db,async tx=>{const snap=await tx.get(ref);if(!snap.exists())return;if(expectedVersion!=null&&snap.data().version!==expectedVersion)throw new Error("CONFLICT");tx.delete(ref)})}
+export async function saveCuttingList(uid,pid,data,id,expectedVersion=null,meta={}){guard();const ref=id?doc(db,"users",uid,"projects",pid,"cuttingLists",id):doc(projectCol(uid,pid,"cuttingLists"));return runTransaction(db,async tx=>{const snap=await tx.get(ref);if(snap.exists()&&expectedVersion!=null&&snap.data().version!==expectedVersion)throw new Error("CONFLICT");const version=(snap.data()?.version||0)+1;tx.set(ref,{...clean(data),projectId:pid,version,lastModifiedBy:uid,operationId:meta.operationId||crypto.randomUUID(),...stamp({},!snap.exists())},{merge:true});return{id:ref.id,version}})}
+export async function deleteCuttingList(uid,pid,id,expectedVersion=null){guard();const ref=doc(db,"users",uid,"projects",pid,"cuttingLists",id);return runTransaction(db,async tx=>{const s=await tx.get(ref);if(s.exists()&&expectedVersion!=null&&s.data().version!==expectedVersion)throw new Error("CONFLICT");if(s.exists())tx.delete(ref)})}
+export async function listCuttingLists(uid,pid){guard();const s=await getDocs(query(projectCol(uid,pid,"cuttingLists"),orderBy("updatedAt","desc")));return s.docs.map(d=>({id:d.id,...d.data()}))}
+export async function saveEstimate(uid,pid,data,id,expectedVersion=null,meta={}){guard();const ref=id?doc(db,"users",uid,"projects",pid,"estimates",id):doc(projectCol(uid,pid,"estimates"));return runTransaction(db,async tx=>{const snap=await tx.get(ref);if(snap.exists()&&expectedVersion!=null&&snap.data().version!==expectedVersion)throw new Error("CONFLICT");const version=(snap.data()?.version||0)+1;const payload={...clean(data),projectId:pid,version,lastModifiedBy:uid,operationId:meta.operationId||crypto.randomUUID(),...stamp({},!snap.exists())};tx.set(ref,payload,{merge:true});return{id:ref.id,version}})}
+export async function deleteEstimate(uid,pid,id,expectedVersion=null){guard();const ref=doc(db,"users",uid,"projects",pid,"estimates",id);return runTransaction(db,async tx=>{const s=await tx.get(ref);if(s.exists()&&expectedVersion!=null&&s.data().version!==expectedVersion)throw new Error("CONFLICT");if(s.exists())tx.delete(ref)})}
+export async function listEstimates(uid,pid){guard();const s=await getDocs(query(projectCol(uid,pid,"estimates"),orderBy("updatedAt","desc")));return s.docs.map(d=>({id:d.id,...d.data()}))}
+export async function getRecord(uid,path){guard();const ref=doc(db,"users",uid,...path);const s=await getDoc(ref);return s.exists()?{id:s.id,...s.data()}:null}
