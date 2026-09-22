@@ -1,1 +1,11 @@
-const n=v=>Number(v)||0;export const toFeet=(v,u)=>{v=n(v);return u==="ft"?v:u==="in"?v/12:u==="cm"?v/30.48:u==="mm"?v/304.8:v/0.3048};export const cft=(l,w,t,u,q=1)=>toFeet(l,u)*toFeet(w,u)*toFeet(t,u)*n(q);export const boardFeet=(l,w,t,q=1)=>n(l)*n(w)*n(t)*n(q)/144;export const area=(l,w,q=1)=>n(l)*n(w)*n(q);export const volume=(l,w,t,q=1)=>n(l)*n(w)*n(t)*n(q);export const waste=(qty,p)=>{const a=n(qty),w=n(p)/100;return{waste:a*w,total:a*(1+w)}};export const fmt=v=>Number.isFinite(v)?Number(v.toFixed(4)):0;
+const num=v=>{const n=Number(v);return Number.isFinite(n)&&n>=0?n:0};
+export const units={ft:1,in:1/12,cm:1/30.48,mm:1/304.8,m:3.280839895};
+export const toFeet=(v,u)=>num(v)*(units[u]??1);
+export const cft=(l,w,t,u="in",q=1)=>toFeet(l,u)*toFeet(w,u)*toFeet(t,u)*num(q);
+export const boardFeet=(l,w,t,q=1)=>num(l)*num(w)*num(t)*num(q)/144;
+export const area=(l,w,q=1)=>num(l)*num(w)*num(q);
+export const volume=(l,w,t,q=1)=>num(l)*num(w)*num(t)*num(q);
+export const waste=(qty,p)=>{const a=num(qty),rate=num(p)/100;return{waste:a*rate,total:a*(1+rate)}};
+export const furniture={door:(h,w,t,q=1)=>({area:area(h,w,q),volume:volume(h,w,t,q)}),windowFrame:(h,w,frame,q=1)=>({outerArea:area(h,w,q),frameRun:2*(num(h)+num(w))*num(q),openingArea:Math.max(0,num(h)-2*num(frame))*Math.max(0,num(w)-2*num(frame))*num(q)}),tabletop:(l,w,t,q=1)=>({area:area(l,w,q),volume:volume(l,w,t,q)}),shelf:(l,w,t,count=1)=>({area:area(l,w,count),volume:volume(l,w,t,count)}),panel:(l,w,t,q=1)=>({area:area(l,w,q),volume:volume(l,w,t,q)}),drawer:(l,w,h,t,q=1)=>({boxVolume:volume(l,w,h,q),panelArea:2*(area(l,w)+area(l,h)+area(w,h))*num(q),panelVolume:2*(volume(l,w,t,q)+volume(l,h,t,q)+volume(w,h,t,q))}),cabinet:(parts=[])=>parts.reduce((a,p)=>{const ar=area(p.l,p.w,p.q);const vol=volume(p.l,p.w,p.t,p.q);return{pieces:a.pieces+num(p.q),area:a.area+ar,volume:a.volume+vol}},{pieces:0,area:0,volume:0})};
+export const fmt=v=>Number.isFinite(Number(v))?Number(Number(v).toFixed(4)):0;
+export const calculate=(type,v={})=>{switch(type){case"CFT":return cft(v.l,v.w,v.t,v.unit,v.q);case"Board Feet":return boardFeet(v.l,v.w,v.t,v.q);case"Area":return area(v.l,v.w,v.q);case"Volume":return volume(v.l,v.w,v.t,v.q);case"Waste":return waste(v.q,v.p).total;default:return 0}};
