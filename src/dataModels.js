@@ -1,0 +1,4 @@
+export const emptyProject={name:"",customer:"",description:"",status:"Planning",startDate:"",expectedCompletion:"",notes:""};
+export const emptyEstimate={projectId:"",projectName:"",customer:"",currency:"INR",materials:[],labour:0,transport:0,otherExpenses:0,wastePercent:0};
+export const emptyPart={name:"",length:"",width:"",thickness:"",quantity:1,material:"Wood"};
+export const estimateTotal=e=>{const materialSubtotal=(e.materials||[]).reduce((s,m)=>s+(Number(m.quantity)||0)*(Number(m.rate)||0),0);const waste=materialSubtotal*(Number(e.wastePercent)||0)/100;return{materialSubtotal,waste,labour:Number(e.labour)||0,transport:Number(e.transport)||0,other:Number(e.otherExpenses)||0,grandTotal:materialSubtotal+waste+(Number(e.labour)||0)+(Number(e.transport)||0)+(Number(e.otherExpenses)||0)}};
