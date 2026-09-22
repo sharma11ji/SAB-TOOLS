@@ -14,3 +14,6 @@ export async function saveCuttingList(uid,projectId,data,id){guard();const ref=i
 export async function deleteCuttingList(uid,projectId,id){guard();return deleteDoc(doc(db,"users",uid,"projects",projectId,"cuttingLists",id))}
 export async function saveEstimate(uid,projectId,data,id){guard();const ref=id?doc(db,"users",uid,"estimates",id):doc(col(uid,"estimates"));await setDoc(ref,{...clean(data),projectId:projectId||null,updatedAt:serverTimestamp(),...(id?{}:{createdAt:serverTimestamp()})},{merge:true});return ref.id}
 export async function deleteEstimate(uid,id){guard();return deleteDoc(doc(db,"users",uid,"estimates",id))}
+
+export async function listCuttingLists(uid,projectId){guard();const s=await getDocs(query(collection(db,"users",uid,"projects",projectId,"cuttingLists"),orderBy("updatedAt","desc")));return s.docs.map(d=>({id:d.id,...d.data()}))}
+export async function listEstimates(uid,projectId){guard();const s=await getDocs(query(col(uid,"estimates"),orderBy("updatedAt","desc")));return s.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.projectId===projectId)}
