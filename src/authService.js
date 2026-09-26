@@ -2,7 +2,13 @@ import{createUserWithEmailAndPassword,sendPasswordResetEmail,signInWithEmailAndP
 import{auth,googleProvider,firebaseReady}from"./firebase";
 import{saveProfile}from"./firestore";
 export async function initAuthPersistence(){if(!auth||!firebaseReady)return false;await setPersistence(auth,browserLocalPersistence);return true}
-export function watchAuth(cb){return auth?onAuthStateChanged(auth,cb):()=>{}}
+export function watchAuth(cb){
+ if(auth)return onAuthStateChanged(auth,cb);
+ // Firebase is optional for the calculator. Resolve the loading screen when
+ // public deployments do not provide Firebase environment variables.
+ cb(null);
+ return()=>{};
+}
 export async function registerEmail({name,email,password}){if(!auth)throw new Error("Firebase is not configured.");const cred=await createUserWithEmailAndPassword(auth,email.trim(),password);if(name?.trim())await updateProfile(cred.user,{displayName:name.trim()});try{await sendEmailVerification(cred.user)}catch{}await saveProfile(cred.user.uid,{displayName:cred.user.displayName||name||"",email:cred.user.email||email,emailVerified:cred.user.emailVerified,photoURL:cred.user.photoURL||"",provider:"password"});return cred.user}
 export async function loginEmail(email,password){if(!auth)throw new Error("Firebase is not configured.");const cred=await signInWithEmailAndPassword(auth,email.trim(),password);await saveProfile(cred.user.uid,{displayName:cred.user.displayName||"",email:cred.user.email||email,emailVerified:cred.user.emailVerified,photoURL:cred.user.photoURL||"",provider:"password"});return cred.user}
 export async function loginGoogle(){if(!auth)throw new Error("Firebase is not configured.");const cred=await signInWithPopup(auth,googleProvider);await saveProfile(cred.user.uid,{displayName:cred.user.displayName||"",email:cred.user.email||"",emailVerified:cred.user.emailVerified,photoURL:cred.user.photoURL||"",provider:"google"});return cred.user}
