@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://sharma11ji.github.io/SAB-TOOLS/sitemap.xml
