@@ -11,7 +11,7 @@ export default function App(){
  if(loading)return <div className="splash"><b>SAB TOOLS</b><span>Checking secure session...</span></div>;
  if(!user&&firebaseReady)return <AuthScreen mode={authMode} setMode={setAuthMode} online={online}/>;
  return <div className="app"><header><div><div className="brand">SAB TOOLS</div><div className="tag">लकड़ी CFT और रसीद</div></div><div className="headerRight"><span className={"status "+(online?"on":"off")}>{online?"Online":"Offline"}</span>{user&&<button className="user" onClick={()=>logout()}>लॉग आउट</button>}</div></header><main>
- {!firebaseReady&&<p className="hint">स्थानीय मोड: Firebase उपलब्ध नहीं है। रसीद इस डिवाइस पर बनाई जा सकती है।</p>}
+ {!firebaseReady&&<p className="hint local-mode-banner">स्थानीय मोड: Firebase उपलब्ध नहीं है। रसीद इस डिवाइस पर बनाई जा सकती है।</p>}
  <div hidden={tab!=="Home"}><h1>आपके टूल</h1><div className="grid"><button className="card" onClick={()=>setTab("Receipt")}><b>लकड़ी रसीद / Timber CFT</b><span>लकड़ी का माप और बिल</span><small>2304 सूत्र · हिंदी रसीद · प्रिंट / PDF</small></button></div></div>
  <div hidden={tab!=="Receipt"}><TimberReceipt key={user?.uid||"local"} userId={user?.uid||"local"}/></div>
  </main><nav style={{gridTemplateColumns:"repeat(2,1fr)"}}><button className={tab==="Home"?"active":""} onClick={()=>setTab("Home")}>होम</button><button className={tab==="Receipt"?"active":""} onClick={()=>setTab("Receipt")}>रसीद / CFT</button></nav></div>;
