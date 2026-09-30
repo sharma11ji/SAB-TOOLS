@@ -2,6 +2,7 @@ import React, {useEffect, useState} from "react";
 import {firebaseReady} from "./firebase";
 import {authError,initAuthPersistence,loginEmail,loginGoogle,logout,registerEmail,resetPassword,watchAuth} from "./authService";
 import TimberReceipt from "./TimberReceipt";
+import {email} from "./validation";
 
 export default function App(){
  const [user,setUser]=useState(null),[loading,setLoading]=useState(true),[authMode,setAuthMode]=useState("login"),[tab,setTab]=useState("Home"),[online,setOnline]=useState(navigator.onLine);
