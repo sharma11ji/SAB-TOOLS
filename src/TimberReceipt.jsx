@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { receiptTotals } from './timberReceipt';
 import './timberReceipt.css';
+import {receiptRecord, validReceipt} from './receiptRecords';
+import {storeReceipt} from './ReceiptTools';
 
 const localDate = () => {
   const date = new Date();
@@ -25,78 +27,95 @@ const receiptWithSettings = userId => {
   return { ...newReceipt(), ...settings, rows: [{ ...newRow(), rate: settings.rate }] };
 };
 
-export default function TimberReceipt({ userId = 'local' }) {
+export default function TimberReceipt({ userId = 'local', initialReceipt }) {
   const [receipt, setReceipt] = useState(() => receiptWithSettings(userId));
   const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+  const recordId = useRef(crypto.randomUUID());
+  const saving = useRef(false);
+  useEffect(() => {
+    if (!initialReceipt || !validReceipt(initialReceipt)) return;
+    setReceipt({...initialReceipt, rows: initialReceipt.rows.map(row => ({...row, id: crypto.randomUUID()}))});
+    recordId.current = initialReceipt.id || crypto.randomUUID();
+    setMessage('Saved receipt opened. Saving again updates this receipt.');
+  }, [initialReceipt]);
   const key = `sab-tools-timber-receipt-v1:${userId}`;
   const totals = receiptTotals(receipt.rows, receipt.rate, receipt.advance, receipt.labour, receipt.transport);
   const set = (field, value) => { setReceipt(old => ({ ...old, [field]: value })); setMessage(''); };
   const setRow = (id, field, value) => set('rows', receipt.rows.map(row => row.id === id ? { ...row, [field]: value } : row));
-  const fields = [ ['shop', 'दुकान / आरा मशीन का नाम'], ['shopAddress', 'दुकान का पता'], ['mobile', 'मोबाइल नंबर'], ['number', 'रसीद नंबर'], ['date', 'दिनांक'], ['customer', 'ग्राहक का नाम'], ['village', 'ग्राहक का पता / गाँव'] ];
+  const fields = [ ['shop', 'Shop / sawmill name'], ['shopAddress', 'Shop address'], ['mobile', 'Mobile number'], ['number', 'Receipt number'], ['date', 'Date'], ['customer', 'Customer name'], ['village', 'Customer address / village'] ];
   const complete = totals.valid && receipt.shop.trim() && receipt.number.trim() && receipt.customer.trim() && receipt.date && receipt.rows.every(row => row.wood.trim());
-  const print = () => {
-    if (!complete) { setMessage('रसीद के लिए दुकान, रसीद नंबर, दिनांक, ग्राहक और हर पंक्ति की लकड़ी किस्म व सही माप भरें। दर और जमा राशि शून्य या अधिक रखें।'); return; }
-    setMessage('');
-    window.print();
+  const print = async () => {
+    if (!complete) { setMessage('For a receipt, fill in the shop, receipt number, date, customer, wood type and valid measurements for every row. Rates and payments must be zero or more.'); return; }
+    if (await saveCloud()) window.print();
+  };
+  const saveCloud = async () => {
+    if (saving.current) return false;
+    if (!complete) {setMessage('Complete the shop, receipt number, date, customer, wood types and valid measurements first.'); return false;}
+    saving.current = true; setBusy(true);
+    try {setMessage(await storeReceipt(userId, receiptRecord(receipt, recordId.current))); return true;}
+    catch (error) {setMessage(`Receipt was not saved: ${error.message} You can still save a local draft. Printing has not started.`); return false;}
+    finally {saving.current = false; setBusy(false);}
   };
   const save = () => {
-    try { localStorage.setItem(key, JSON.stringify(receipt)); setMessage('ड्राफ्ट इस ब्राउज़र में सेव हुआ। यह क्लाउड बैकअप नहीं है।'); }
-    catch { setMessage('इस ब्राउज़र में ड्राफ्ट सेव नहीं हो पाया।'); }
+    try { localStorage.setItem(key, JSON.stringify(receipt)); setMessage('Draft saved in this browser. This is not a cloud backup.'); }
+    catch { setMessage('Could not save a draft in this browser.'); }
   };
   const saveSettings = () => {
-    if (receipt.rate.trim() === '' || !Number.isFinite(Number(receipt.rate)) || Number(receipt.rate) < 0) { setMessage('सही दर भरें: शून्य या अधिक।'); return; }
+    if (receipt.rate.trim() === '' || !Number.isFinite(Number(receipt.rate)) || Number(receipt.rate) < 0) { setMessage('Enter a valid rate: zero or more.'); return; }
     try {
       const settings = Object.fromEntries(['shop', 'shopAddress', 'mobile', 'rate'].map(field => [field, receipt[field]]));
       localStorage.setItem(settingsKey(userId), JSON.stringify(settings));
-      setMessage('दुकान और दर इस ब्राउज़र में सेव हैं। नई रसीद में अपने आप भरेंगे।');
-    } catch { setMessage('सेटिंग सेव नहीं हो पाई।'); }
+      setMessage('Shop details and default rate saved in this browser. They will fill new receipts.');
+    } catch { setMessage('Settings could not be saved.'); }
   };
   const load = () => {
     try {
       const value = JSON.parse(localStorage.getItem(key));
-      if (!value) { setMessage('इस ब्राउज़र में कोई सेव किया हुआ ड्राफ्ट नहीं मिला।'); return; }
+      if (!value) { setMessage('No saved draft was found in this browser.'); return; }
       if (!Array.isArray(value.rows) || !value.rows.length || value.rows.length > 500 || !fields.every(([field]) => typeof value[field] === 'string') || typeof value.rate !== 'string' || typeof value.advance !== 'string' || typeof value.labour !== 'string' || typeof value.transport !== 'string' || !value.rows.every(row => ['wood', 'length', 'girth', 'rate'].every(field => typeof row[field] === 'string'))) throw new Error('Invalid draft');
-      if (!confirm('वर्तमान जानकारी हटाकर सेव किया हुआ ड्राफ्ट खोलें?')) return;
+      if (!confirm('Replace current entries with the saved draft?')) return;
+      recordId.current = crypto.randomUUID();
       setReceipt({ ...value, rows: value.rows.map(row => ({ ...row, id: crypto.randomUUID() })) });
-      setMessage('सेव किया हुआ ड्राफ्ट खुल गया।');
-    } catch { setMessage('सेव किया हुआ ड्राफ्ट नहीं खुल पाया।'); }
+      setMessage('Saved draft opened.');
+    } catch { setMessage('Saved draft could not be opened.'); }
   };
-  return <section className="timber-tool" lang="hi">
+  return <section className="timber-tool" lang="en">
     <div className="receipt-editor">
-      <h1>लकड़ी CFT और रसीद</h1>
-      <p>बस लंबाई और गोलाई लिखें। CFT और कुल CFT अपने आप जुड़ेंगे। अगली लकड़ी के लिए "+ लकड़ी जोड़ें" दबाएँ।</p>
-      <p className="hint">लंबाई फुट (ft) में, गोलाई इंच (in) में। गोलाई चारों तरफ का घेरा है, व्यास नहीं।</p>
+      <h1>Timber CFT and receipt</h1>
+      <p>Enter length and girth. CFT and total CFT update automatically. Tap "+ Add wood" for the next piece.</p>
+      <p className="hint">Length is in feet (ft), girth in inches (in). Girth is the circumference, not the diameter.</p>
 
-      <h2>लकड़ी के माप</h2>
+      <h2>Wood measurements</h2>
       <div className="timber-rows">{receipt.rows.map((row, index) => <div className="timber-row form" key={row.id}>
-        <div className="timber-row-head"><b>लकड़ी {index + 1}</b><button type="button" className="secondary" aria-label={`लकड़ी ${index + 1} हटाएँ`} disabled={receipt.rows.length === 1} onClick={() => set('rows', receipt.rows.filter(item => item.id !== row.id))}>हटाएँ</button></div>
+        <div className="timber-row-head"><b>Wood {index + 1}</b><button type="button" className="secondary" aria-label={`Wood ${index + 1} Remove`} disabled={receipt.rows.length === 1} onClick={() => set('rows', receipt.rows.filter(item => item.id !== row.id))}>Remove</button></div>
 
-        <div className="timber-measures">{[['length', 'लंबाई (ft)'], ['girth', 'गोलाई (in)']].map(([field, label]) => <label key={field}>{label}<input id={field === 'length' ? `timber-length-${row.id}` : undefined} aria-label={`लकड़ी ${index + 1} ${label}`} type="number" inputMode="decimal" min="0" step="any" placeholder="0" value={row[field]} onChange={event => setRow(row.id, field, event.target.value)} /></label>)}</div>
-<p className="row-volume">CFT: <b>{totals.volumes[index] === null ? 'माप भरें' : decimal(totals.volumes[index])}</b> · रकम: <b>{totals.volumes[index] !== null && Number.isFinite(totals.amounts[index]) && Number(row.rate) >= 0 && row.rate !== '' ? money(totals.amounts[index]) : '-'}</b></p>
-        <details className="timber-optional"><summary>लकड़ी किस्म / रेट (रसीद के लिए)</summary>        <label>लकड़ी किस्म<input aria-label={`लकड़ी ${index + 1} किस्म`} placeholder="जैसे: शीशम" maxLength={80} value={row.wood} onChange={event => setRow(row.id, 'wood', event.target.value)} /></label>        <label>रेट (₹ / CFT)<input aria-label={`लकड़ी ${index + 1} रेट (₹ / CFT)`} type="number" inputMode="decimal" min="0" step="0.01" value={row.rate} onChange={event => setRow(row.id, 'rate', event.target.value)} /></label></details>
+        <div className="timber-measures">{[['length', 'Length (ft)'], ['girth', 'Girth (in)']].map(([field, label]) => <label key={field}>{label}<input id={field === 'length' ? `timber-length-${row.id}` : undefined} aria-label={`Wood ${index + 1} ${label}`} type="number" inputMode="decimal" min="0" step="any" placeholder="0" value={row[field]} onChange={event => setRow(row.id, field, event.target.value)} /></label>)}</div>
+<p className="row-volume">CFT: <b>{totals.volumes[index] === null ? 'Enter measurements' : decimal(totals.volumes[index])}</b> · Amount: <b>{totals.volumes[index] !== null && Number.isFinite(totals.amounts[index]) && Number(row.rate) >= 0 && row.rate !== '' ? money(totals.amounts[index]) : '-'}</b></p>
+        <details className="timber-optional"><summary>Wood type / rate (for receipt)</summary>        <label>Wood type<input aria-label={`Wood ${index + 1} type`} placeholder="e.g. Teak" maxLength={80} value={row.wood} onChange={event => setRow(row.id, 'wood', event.target.value)} /></label>        <label>Rate (₹ / CFT)<input aria-label={`Wood ${index + 1} Rate (₹ / CFT)`} type="number" inputMode="decimal" min="0" step="0.01" value={row.rate} onChange={event => setRow(row.id, 'rate', event.target.value)} /></label></details>
       </div>)}</div>
-      <button type="button" className="secondary wide" onClick={() => { const row = { ...newRow(), rate: receipt.rate }; set('rows', [...receipt.rows, row]); requestAnimationFrame(() => { const input = document.getElementById(`timber-length-${row.id}`); input?.focus(); input?.scrollIntoView({block: 'center', behavior: 'smooth'}); }); }}>+ लकड़ी जोड़ें</button>
-      <div className="result"><span>कुल CFT {totals.volumes.some(volume => volume === null) ? '(अधूरे माप)' : ''}</span><strong>{decimal(totals.cft)}</strong></div>
-      <details className="timber-billing"><summary>रसीद बनानी है? नाम, दर और बाकी जानकारी भरें</summary>
-      <div className="form"><h2>रसीद की जानकारी</h2><div className="two">{fields.map(([field, label]) => <label key={field}>{label}<input type={field === 'date' ? 'date' : field === 'mobile' ? 'tel' : 'text'} maxLength={field === 'mobile' ? 20 : 160} value={receipt[field]} onChange={event => set(field, event.target.value)} /></label>)}</div></div>
-      <div className="form two"><label>सभी लकड़ी की दर (₹ / CFT)<input type="number" inputMode="decimal" min="0" step="0.01" value={receipt.rate} onChange={event => setReceipt(old => ({ ...old, rate: event.target.value, rows: old.rows.map(row => ({ ...row, rate: event.target.value })) }))} /></label><label>जमा राशि (₹)<input type="number" inputMode="decimal" min="0" step="0.01" value={receipt.advance} onChange={event => set('advance', event.target.value)} /></label><label>चीराई / कटाई मजदूरी (₹)<input type="number" inputMode="decimal" min="0" step="0.01" value={receipt.labour} onChange={event => set('labour', event.target.value)} /></label><label>गाड़ी भाड़ा (₹)<input type="number" inputMode="decimal" min="0" step="0.01" value={receipt.transport} onChange={event => set('transport', event.target.value)} /></label></div>
-      <button className="secondary" type="button" onClick={saveSettings}>दुकान और दर हमेशा के लिए सेव करें</button>
-      <p className="hint">सेव किए हुए दुकान नाम, पता, मोबाइल और सामान्य दर इसी ब्राउज़र की नई रसीद में अपने आप भरेंगे। दूसरे डिवाइस में नहीं आते; साइट डेटा हटाने पर मिटेंगे। प्रति-लकड़ी अलग दर सेव नहीं होती।</p>
+      <button type="button" className="secondary wide" onClick={() => { const row = { ...newRow(), rate: receipt.rate }; set('rows', [...receipt.rows, row]); requestAnimationFrame(() => { const input = document.getElementById(`timber-length-${row.id}`); input?.focus(); input?.scrollIntoView({block: 'center', behavior: 'smooth'}); }); }}>+ Add wood</button>
+      <div className="result"><span>Total CFT {totals.volumes.some(volume => volume === null) ? '(incomplete measurements)' : ''}</span><strong>{decimal(totals.cft)}</strong></div>
+      <details className="timber-billing"><summary>Need a receipt? Add names, rates and billing details</summary>
+      <div className="form"><h2>Receipt details</h2><div className="two">{fields.map(([field, label]) => <label key={field}>{label}<input type={field === 'date' ? 'date' : field === 'mobile' ? 'tel' : 'text'} maxLength={field === 'mobile' ? 20 : 160} value={receipt[field]} onChange={event => set(field, event.target.value)} /></label>)}</div></div>
+      <div className="form two"><label>Default rate for all wood (₹ / CFT)<input type="number" inputMode="decimal" min="0" step="0.01" value={receipt.rate} onChange={event => setReceipt(old => ({ ...old, rate: event.target.value, rows: old.rows.map(row => ({ ...row, rate: event.target.value })) }))} /></label><label>Amount paid (₹)<input type="number" inputMode="decimal" min="0" step="0.01" value={receipt.advance} onChange={event => set('advance', event.target.value)} /></label><label>Sawing / cutting labour (₹)<input type="number" inputMode="decimal" min="0" step="0.01" value={receipt.labour} onChange={event => set('labour', event.target.value)} /></label><label>Transport (₹)<input type="number" inputMode="decimal" min="0" step="0.01" value={receipt.transport} onChange={event => set('transport', event.target.value)} /></label></div>
+      <button className="secondary" type="button" onClick={saveSettings}>Save shop details and default rate</button>
+      <p className="hint">Saved shop details and the default rate fill new receipts on this browser only. Clearing site data removes them. Individual wood rates are not saved as defaults.</p>
       </details>
-      {!totals.valid && <p className="hint">सभी लंबाई और गोलाई शून्य से अधिक भरें। दर और जमा राशि शून्य या अधिक होनी चाहिए। अधूरी जानकारी से रसीद प्रिंट नहीं होगी।</p>}
-      <div className="receipt-actions"><button className="primary" type="button" onClick={print}>PDF सेव / प्रिंट</button><button className="secondary" type="button" onClick={save}>ड्राफ्ट सेव</button><button className="secondary" type="button" onClick={load}>ड्राफ्ट खोलें</button><button className="secondary" type="button" onClick={() => { if (confirm('नई रसीद शुरू करें? वर्तमान जानकारी हट जाएगी। सेव किया हुआ ड्राफ्ट नहीं हटेगा।')) { setReceipt(receiptWithSettings(userId)); setMessage(''); } }}>नई रसीद</button></div>
-      <p className="hint">प्रिंट मेन्यू में "Save as PDF" चुनें, अगर आपके ब्राउज़र में उपलब्ध हो। फिर सेव की हुई PDF WhatsApp पर भेज सकते हैं। PDF बटन ब्राउज़र का प्रिंट मेन्यू खोलता है, सीधे फ़ाइल डाउनलोड नहीं करता। ड्राफ्ट केवल इस डिवाइस के ब्राउज़र में रहता है; साइट डेटा हटाने से मिट सकता है।</p>
+      {!totals.valid && <p className="hint">Enter positive lengths and girths. Rates and payments must be zero or more. Incomplete receipts cannot be saved or printed.</p>}
+      <div className="receipt-actions"><button className="primary" type="button" disabled={busy} onClick={print}>Save PDF / print</button><button className="secondary" type="button" disabled={busy} onClick={saveCloud}>{busy ? 'Saving...' : 'Save receipt'}</button><button className="secondary" type="button" onClick={save}>Save draft</button><button className="secondary" type="button" onClick={load}>Open draft</button><button className="secondary" type="button" onClick={() => { if (confirm('Start a new receipt? Current entries will be cleared. Your saved draft and receipts will remain.')) { setReceipt(receiptWithSettings(userId)); recordId.current = crypto.randomUUID(); setMessage(''); } }}>New receipt</button></div>
+      <p className="hint">Save receipt stores the complete receipt in your cloud account, or on this browser in local mode. PDF saves the receipt first, then opens the browser print menu. Choose "Save as PDF" if available. Drafts stay on this device only.</p>
       {message && <div className="notice" role="status">{message}</div>}
-      <h2>रसीद का प्रीव्यू</h2>
+      <h2>Receipt preview</h2>
     </div>
-    <article className="timber-receipt" aria-label="रसीद का प्रीव्यू">
-      <div className="receipt-heading"><p>श्री विश्वकर्मा नमः</p><h2>{receipt.shop || 'दुकान / आरा मशीन का नाम'}</h2><p>{receipt.shopAddress || 'दुकान का पता'}</p>{receipt.mobile && <p>मो.: {receipt.mobile}</p>}<h3>लकड़ी की रसीद</h3></div>
-      <div className="receipt-meta"><span>रसीद नं.: {receipt.number || '-'}</span><span>दिनांक: {receipt.date ? receipt.date.split('-').reverse().join('/') : '-'}</span></div>
-      <p>ग्राहक का नाम: {receipt.customer || '-'}</p><p>पता / गाँव: {receipt.village || '-'}</p>
-      <table><thead><tr><th scope="col">क्र.सं.</th><th scope="col">लकड़ी किस्म</th><th scope="col">लंबाई<br />(ft)</th><th scope="col">गोलाई<br />(in)</th><th scope="col">CFT</th><th scope="col">रेट<br />(₹/CFT)</th><th scope="col">रकम<br />(₹)</th></tr></thead><tbody>{receipt.rows.map((row, index) => <tr key={row.id}><td>{index + 1}</td><td>{row.wood || '-'}</td><td>{row.length || '-'}</td><td>{row.girth || '-'}</td><td>{totals.volumes[index] === null ? '-' : decimal(totals.volumes[index])}</td><td>{row.rate === '' || !Number.isFinite(Number(row.rate)) || Number(row.rate) < 0 ? '-' : Number(row.rate).toLocaleString('en-IN')}</td><td>{totals.volumes[index] !== null && Number.isFinite(totals.amounts[index]) && row.rate !== '' && Number(row.rate) >= 0 ? totals.amounts[index].toLocaleString('en-IN', {minimumFractionDigits:2,maximumFractionDigits:2}) : '-'}</td></tr>)}</tbody></table>
-      <div className="receipt-summary"><p><span>कुल लकड़ी (थान / पीस)</span><b>{receipt.rows.length}</b></p><p><span>कुल CFT{totals.volumes.some(volume => volume === null) ? ' (अधूरा)' : ''}</span><b>{decimal(totals.cft)}</b></p><p><span>लकड़ी का कुल मूल्य</span><b>{totals.valid ? money(totals.woodValue) : '-'}</b></p><p><span>चीराई / कटाई मजदूरी</span><b>{totals.valid ? money(totals.labour) : '-'}</b></p><p><span>गाड़ी भाड़ा</span><b>{totals.valid ? money(totals.transport) : '-'}</b></p><p><span>कुल योग</span><b>{totals.valid ? money(totals.total) : '-'}</b></p><p><span>जमा राशि</span><b>{totals.valid ? money(totals.advance) : '-'}</b></p><p><span>{totals.balance < 0 ? 'अधिक जमा (वापसी)' : 'बकाया राशि'}</span><b>{totals.valid ? money(Math.abs(totals.balance)) : '-'}</b></p></div>
-      <p className="receipt-method">CFT = लंबाई (ft) × गोलाई (in)² ÷ 2304। हर लकड़ी की रकम बिना राउंड किए CFT से निकाली गई है और पैसे तक राउंड करके जोड़ी गई है; प्रदर्शित CFT 4 दशमलव और राशि 2 दशमलव तक है।</p>
-      <div className="receipt-signature">हस्ताक्षर: ____________________</div>
+    <article className="timber-receipt receipt-preview" aria-label="Receipt preview">
+      <div className="receipt-heading"><p>Shri Vishwakarma Namah</p><h2>{receipt.shop || 'Shop / sawmill name'}</h2><p>{receipt.shopAddress || 'Shop address'}</p>{receipt.mobile && <p>Mobile: {receipt.mobile}</p>}<h3>Timber receipt</h3></div>
+      <div className="receipt-meta"><span>Receipt no.: {receipt.number || '-'}</span><span>Date: {receipt.date ? receipt.date.split('-').reverse().join('/') : '-'}</span></div>
+      <p>Customer name: {receipt.customer || '-'}</p><p>Address / village: {receipt.village || '-'}</p>
+      <table><thead><tr><th scope="col">No.</th><th scope="col">Wood type</th><th scope="col">Length<br />(ft)</th><th scope="col">Girth<br />(in)</th><th scope="col">CFT</th><th scope="col">Rate<br />(₹/CFT)</th><th scope="col">Amount<br />(₹)</th></tr></thead><tbody>{receipt.rows.map((row, index) => <tr key={row.id}><td>{index + 1}</td><td>{row.wood || '-'}</td><td>{row.length || '-'}</td><td>{row.girth || '-'}</td><td>{totals.volumes[index] === null ? '-' : decimal(totals.volumes[index])}</td><td>{row.rate === '' || !Number.isFinite(Number(row.rate)) || Number(row.rate) < 0 ? '-' : Number(row.rate).toLocaleString('en-IN')}</td><td>{totals.volumes[index] !== null && Number.isFinite(totals.amounts[index]) && row.rate !== '' && Number(row.rate) >= 0 ? totals.amounts[index].toLocaleString('en-IN', {minimumFractionDigits:2,maximumFractionDigits:2}) : '-'}</td></tr>)}</tbody></table>
+      <div className="receipt-summary"><p><span>Total pieces</span><b>{receipt.rows.length}</b></p><p><span>Total CFT{totals.volumes.some(volume => volume === null) ? ' (incomplete)' : ''}</span><b>{decimal(totals.cft)}</b></p><p><span>Wood value</span><b>{totals.valid ? money(totals.woodValue) : '-'}</b></p><p><span>Sawing / cutting labour</span><b>{totals.valid ? money(totals.labour) : '-'}</b></p><p><span>Transport</span><b>{totals.valid ? money(totals.transport) : '-'}</b></p><p><span>Grand total</span><b>{totals.valid ? money(totals.total) : '-'}</b></p><p><span>Amount paid</span><b>{totals.valid ? money(totals.advance) : '-'}</b></p><p><span>{totals.balance < 0 ? 'Overpayment (refund)' : 'Balance due'}</span><b>{totals.valid ? money(Math.abs(totals.balance)) : '-'}</b></p></div>
+      <p className="receipt-method">CFT = length (ft) × girth (in)² ÷ 2304. Each wood amount uses unrounded CFT and is rounded to paise before adding. Displayed CFT uses 4 decimals; money uses 2.</p>
+      <div className="receipt-signature">Signature: ____________________</div>
     </article>
   </section>;
 }
