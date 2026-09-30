@@ -11,8 +11,22 @@ const newReceipt = () => ({ shop: '', shopAddress: '', mobile: '', number: '1', 
 const decimal = value => value.toLocaleString('en-IN', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
 const money = value => value.toLocaleString('en-IN', { style: 'currency', currency: 'INR' });
 
+const settingsKey = userId => `sab-tools-timber-settings-v1:${userId}`;
+const defaultSettings = { shop: '', shopAddress: '', mobile: '', rate: '0' };
+const readSettings = userId => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(settingsKey(userId)));
+    if (saved && ['shop', 'shopAddress', 'mobile', 'rate'].every(field => typeof saved[field] === 'string') && saved.rate.trim() !== '' && Number.isFinite(Number(saved.rate)) && Number(saved.rate) >= 0) return saved;
+  } catch {}
+  return defaultSettings;
+};
+const receiptWithSettings = userId => {
+  const settings = readSettings(userId);
+  return { ...newReceipt(), ...settings, rows: [{ ...newRow(), rate: settings.rate }] };
+};
+
 export default function TimberReceipt({ userId = 'local' }) {
-  const [receipt, setReceipt] = useState(newReceipt);
+  const [receipt, setReceipt] = useState(() => receiptWithSettings(userId));
   const [message, setMessage] = useState('');
   const key = `sab-tools-timber-receipt-v1:${userId}`;
   const totals = receiptTotals(receipt.rows, receipt.rate, receipt.advance, receipt.labour, receipt.transport);
@@ -28,6 +42,14 @@ export default function TimberReceipt({ userId = 'local' }) {
   const save = () => {
     try { localStorage.setItem(key, JSON.stringify(receipt)); setMessage('ड्राफ्ट इस ब्राउज़र में सेव हुआ। यह क्लाउड बैकअप नहीं है।'); }
     catch { setMessage('इस ब्राउज़र में ड्राफ्ट सेव नहीं हो पाया।'); }
+  };
+  const saveSettings = () => {
+    if (receipt.rate.trim() === '' || !Number.isFinite(Number(receipt.rate)) || Number(receipt.rate) < 0) { setMessage('सही दर भरें: शून्य या अधिक।'); return; }
+    try {
+      const settings = Object.fromEntries(['shop', 'shopAddress', 'mobile', 'rate'].map(field => [field, receipt[field]]));
+      localStorage.setItem(settingsKey(userId), JSON.stringify(settings));
+      setMessage('दुकान और दर इस ब्राउज़र में सेव हैं। नई रसीद में अपने आप भरेंगे।');
+    } catch { setMessage('सेटिंग सेव नहीं हो पाई।'); }
   };
   const load = () => {
     try {
@@ -58,10 +80,12 @@ export default function TimberReceipt({ userId = 'local' }) {
       <details className="timber-billing"><summary>रसीद बनानी है? नाम, दर और बाकी जानकारी भरें</summary>
       <div className="form"><h2>रसीद की जानकारी</h2><div className="two">{fields.map(([field, label]) => <label key={field}>{label}<input type={field === 'date' ? 'date' : field === 'mobile' ? 'tel' : 'text'} maxLength={field === 'mobile' ? 20 : 160} value={receipt[field]} onChange={event => set(field, event.target.value)} /></label>)}</div></div>
       <div className="form two"><label>सभी लकड़ी की दर (₹ / CFT)<input type="number" inputMode="decimal" min="0" step="0.01" value={receipt.rate} onChange={event => setReceipt(old => ({ ...old, rate: event.target.value, rows: old.rows.map(row => ({ ...row, rate: event.target.value })) }))} /></label><label>जमा राशि (₹)<input type="number" inputMode="decimal" min="0" step="0.01" value={receipt.advance} onChange={event => set('advance', event.target.value)} /></label><label>चीराई / कटाई मजदूरी (₹)<input type="number" inputMode="decimal" min="0" step="0.01" value={receipt.labour} onChange={event => set('labour', event.target.value)} /></label><label>गाड़ी भाड़ा (₹)<input type="number" inputMode="decimal" min="0" step="0.01" value={receipt.transport} onChange={event => set('transport', event.target.value)} /></label></div>
+      <button className="secondary" type="button" onClick={saveSettings}>दुकान और दर हमेशा के लिए सेव करें</button>
+      <p className="hint">सेव किए हुए दुकान नाम, पता, मोबाइल और सामान्य दर इसी ब्राउज़र की नई रसीद में अपने आप भरेंगे। दूसरे डिवाइस में नहीं आते; साइट डेटा हटाने पर मिटेंगे। प्रति-लकड़ी अलग दर सेव नहीं होती।</p>
       </details>
       {!totals.valid && <p className="hint">सभी लंबाई और गोलाई शून्य से अधिक भरें। दर और जमा राशि शून्य या अधिक होनी चाहिए। अधूरी जानकारी से रसीद प्रिंट नहीं होगी।</p>}
-      <div className="receipt-actions"><button className="primary" type="button" onClick={print}>प्रिंट / PDF सेव करें</button><button className="secondary" type="button" onClick={save}>ड्राफ्ट सेव</button><button className="secondary" type="button" onClick={load}>ड्राफ्ट खोलें</button><button className="secondary" type="button" onClick={() => { if (confirm('नई रसीद शुरू करें? वर्तमान जानकारी हट जाएगी। सेव किया हुआ ड्राफ्ट नहीं हटेगा।')) { setReceipt(newReceipt()); setMessage(''); } }}>नई रसीद</button></div>
-      <p className="hint">प्रिंट मेन्यू में "Save as PDF" चुनें, अगर आपके ब्राउज़र में उपलब्ध हो। फिर सेव की हुई PDF WhatsApp पर भेज सकते हैं। ड्राफ्ट केवल इस डिवाइस के ब्राउज़र में रहता है; साइट डेटा हटाने से मिट सकता है।</p>
+      <div className="receipt-actions"><button className="primary" type="button" onClick={print}>PDF सेव / प्रिंट</button><button className="secondary" type="button" onClick={save}>ड्राफ्ट सेव</button><button className="secondary" type="button" onClick={load}>ड्राफ्ट खोलें</button><button className="secondary" type="button" onClick={() => { if (confirm('नई रसीद शुरू करें? वर्तमान जानकारी हट जाएगी। सेव किया हुआ ड्राफ्ट नहीं हटेगा।')) { setReceipt(receiptWithSettings(userId)); setMessage(''); } }}>नई रसीद</button></div>
+      <p className="hint">प्रिंट मेन्यू में "Save as PDF" चुनें, अगर आपके ब्राउज़र में उपलब्ध हो। फिर सेव की हुई PDF WhatsApp पर भेज सकते हैं। PDF बटन ब्राउज़र का प्रिंट मेन्यू खोलता है, सीधे फ़ाइल डाउनलोड नहीं करता। ड्राफ्ट केवल इस डिवाइस के ब्राउज़र में रहता है; साइट डेटा हटाने से मिट सकता है।</p>
       {message && <div className="notice" role="status">{message}</div>}
       <h2>रसीद का प्रीव्यू</h2>
     </div>
