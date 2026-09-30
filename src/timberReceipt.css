@@ -2,3 +2,5 @@
 @media print{@page{size:A4;margin:14mm}html:has(.timber-tool){background:#fff}body:has(.timber-tool){background:#fff;color:#000}body:has(.timber-tool) .receipt-editor,body:has(.timber-tool) header,body:has(.timber-tool) nav,body:has(.timber-tool) .notice,body:has(.timber-tool) .syncbar{display:none!important}body:has(.timber-tool) .app{padding:0;min-height:0;background:#fff}body:has(.timber-tool) main{padding:0;margin:0;max-width:none}.timber-receipt{padding:0;border:0;border-radius:0;margin:0;overflow:visible;box-shadow:none}.timber-receipt table{font-size:12px}.timber-receipt thead{display:table-header-group}.timber-receipt tr{break-inside:avoid}.receipt-heading,.receipt-meta{break-inside:avoid}.receipt-summary{break-inside:avoid}.timber-receipt th,.timber-receipt td{padding:8px 5px}.receipt-heading h2{font-size:24px}}
 
 @media(max-width:480px){.timber-receipt table{font-size:10px}.timber-receipt th,.timber-receipt td{padding:7px 2px}.receipt-summary{font-size:13px}}
+
+@media print{.local-mode-banner{display:none!important}}
