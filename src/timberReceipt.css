@@ -4,3 +4,4 @@
 @media(max-width:480px){.timber-receipt table{font-size:10px}.timber-receipt th,.timber-receipt td{padding:7px 2px}.receipt-summary{font-size:13px}}
 
 @media print{.local-mode-banner{display:none!important}}
+.timber-optional{margin-top:14px}.timber-tool summary{cursor:pointer;font-size:13px;font-weight:700;padding:12px 0;line-height:1.6}.timber-billing{margin:14px 0;padding:0 14px;border:1px solid #d7cec2;border-radius:12px;background:#fff}.timber-billing>.form{margin-bottom:12px}
