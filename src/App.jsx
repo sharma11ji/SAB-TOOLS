@@ -7,7 +7,10 @@ import{deleteProjectCascade,deleteCuttingList,deleteEstimate,listCuttingLists,li
 import{isOnline,queueSave,readPending,removePending}from"./offline";
 import{isConflict}from"./conflict";
 
+import TimberReceipt from "./TimberReceipt";
+
 const TOOLS=[
+["लकड़ी रसीद / Timber CFT","Wood Calculators","गोल लकड़ी CFT और हिंदी रसीद (PDF / Print)"],
 ["CFT","Wood Calculators","Cubic feet of timber"],["Board Feet","Wood Calculators","Board feet"],["Area","Measurement Tools","Rectangle area"],["Volume","Measurement Tools","Rectangular volume"],["Waste","Material Estimation","Waste allowance"],
 ["Door","Furniture Calculators","Door material"],["Door Frame","Furniture Calculators","Door frame"],["Window Frame","Furniture Calculators","Window frame"],["Tabletop","Furniture Calculators","Tabletop material"],["Shelf","Furniture Calculators","Shelf material"],["Cabinet","Furniture Calculators","Cabinet parts"],["Drawer","Furniture Calculators","Drawer parts"],["Panel","Furniture Calculators","Panel material"]
 ];
@@ -29,7 +32,7 @@ export default function App(){
  {!firebaseReady&&<div className="notice">Firebase is not configured for this deployment. Calculators work here, but login and cloud saving are unavailable.</div>}
  {tab==="Home"&&<Home openTool={openTool} setTab={setTab} projects={projects} history={history}/>}
  {tab==="Tools"&&<Tools openTool={openTool}/>}
- {tab==="Calculator"&&<Calculator tool={tool} project={selected} onSave={saveCalc}/>}
+ {tab==="Calculator"&&(tool==="लकड़ी रसीद / Timber CFT"?<TimberReceipt key={user?.uid||"local"} userId={user?.uid||"local"}/>:<Calculator tool={tool} project={selected} onSave={saveCalc}/>)}
  {tab==="History"&&user&&<History user={user} history={history}/>}
  {tab==="Projects"&&user&&<Projects user={user} projects={projects} selected={selected} setSelected={setSelected} setTab={setTab} online={online}/>}
  {tab==="Project"&&user&&selected&&<ProjectDetail user={user} project={selected} history={history} setSelected={setSelected} setTab={setTab} openTool={openTool} online={online}/>}
