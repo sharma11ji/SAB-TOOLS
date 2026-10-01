@@ -1,17 +1,36 @@
 import { receiptTotals } from './timberReceipt.js';
 
-// Public form action and question ID read from the published form, not secrets.
+// Public form action and question IDs read from the published form, not secrets.
 export const FORM_ENDPOINT = 'https://docs.google.com/forms/d/e/1FAIpQLSc9xQyk-4_lkGYsMaZIBWA2l7pIST6w0aw6WdmthUcltINyOQ/formResponse';
-export const FORM_ENTRY = 'entry.1178599720';
-// One physical TSV line: names containing tabs/newlines must not create columns.
+// Legacy question stays in the form for older deployed clients; new saves use these fields.
+export const FORM_ENTRIES = Object.freeze({
+  date: 'entry.1469168775',
+  number: 'entry.2933509',
+  customer: 'entry.250548963',
+  village: 'entry.1472688288',
+  item: 'entry.320633889',
+  cft: 'entry.859064317',
+  rate: 'entry.1970523742',
+  total: 'entry.1585094186',
+  paid: 'entry.2092535714',
+  balance: 'entry.141457805',
+  labour: 'entry.1913979549',
+  transport: 'entry.908651231',
+});
+// One receipt per response. Multiple wood names stay in one Item cell.
 const cell = value => String(value ?? '').replace(/[\t\r\n]/g, ' ');
-export function receiptLine(record) {
+export function receiptFields(record) {
   const totals = receiptTotals(record.rows, record.rate, record.advance, record.labour, record.transport);
   if (!totals.valid || !record.id) throw new Error('Invalid receipt');
   const rates = record.rows.map(row => Number(row.rate ?? record.rate));
-  return [record.date, record.number, record.customer, record.village,
-    totals.cft.toFixed(4), rates.every(rate => rate === rates[0]) ? rates[0] : 'Mixed',
-    totals.total.toFixed(2), totals.advance.toFixed(2), totals.balance.toFixed(2)].map(cell).join('\t');
+  const items = [...new Set(record.rows.map(row => cell(row.wood).trim()).filter(Boolean))];
+  return Object.fromEntries(Object.entries({
+    date: record.date, number: record.number, customer: record.customer, village: record.village,
+    item: items.join(', '), cft: totals.cft.toFixed(4),
+    rate: rates.every(rate => rate === rates[0]) ? rates[0] : 'Mixed',
+    total: totals.total.toFixed(2), paid: totals.advance.toFixed(2), balance: totals.balance.toFixed(2),
+    labour: totals.labour.toFixed(2), transport: totals.transport.toFixed(2),
+  }).map(([key, value]) => [FORM_ENTRIES[key], cell(value)]));
 }
 // Best-effort append-only mirror. An opaque response is NOT an acknowledgement.
 // Re-saving/printing can create duplicate responses. No keys or cookies sent.
@@ -21,7 +40,7 @@ export async function mirrorReceipt(record, { enabled, fetcher = globalThis.fetc
     await fetcher(FORM_ENDPOINT, {
       method: 'POST', mode: 'no-cors', credentials: 'omit',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-      body: new URLSearchParams({ [FORM_ENTRY]: receiptLine(record) }).toString(),
+      body: new URLSearchParams(receiptFields(record)).toString(),
     });
   } catch {
     // Primary receipt remains saved. No success claim and no automatic retry.
