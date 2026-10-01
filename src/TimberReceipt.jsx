@@ -3,8 +3,7 @@ import { receiptTotals } from './timberReceipt';
 import './timberReceipt.css';
 import {receiptRecord, validReceipt} from './receiptRecords';
 import {storeReceipt} from './ReceiptTools';
-import {cleanSheetUrl, validSheetUrl, mirrorReceipt} from './sheetMirror';
-const sheetEndpoint = cleanSheetUrl(import.meta.env.VITE_SHEET_WEBHOOK_URL);
+import {FORM_ENDPOINT, mirrorReceipt} from './sheetMirror';
 
 const localDate = () => {
   const date = new Date();
@@ -33,9 +32,8 @@ export default function TimberReceipt({ userId = 'local', initialReceipt }) {
   const [receipt, setReceipt] = useState(() => receiptWithSettings(userId));
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
-  const mirrorSettingsKey = `sab-tools-sheet-key-v1:${userId}:${sheetEndpoint}`;
-  const [sheetKey, setSheetKey] = useState(() => { try { return localStorage.getItem(mirrorSettingsKey) || ''; } catch { return ''; } });
-  const [sheetKeyInput, setSheetKeyInput] = useState('');
+  const mirrorSettingsKey = `sab-tools-form-enabled-v1:${userId}:${FORM_ENDPOINT}`;
+  const [sheetEnabled, setSheetEnabled] = useState(() => { try { return localStorage.getItem(mirrorSettingsKey) === 'yes'; } catch { return false; } });
   const [sheetSettingsMessage, setSheetSettingsMessage] = useState('');
   const recordId = useRef(crypto.randomUUID());
   const saving = useRef(false);
@@ -62,7 +60,7 @@ export default function TimberReceipt({ userId = 'local', initialReceipt }) {
     try {
       const record = receiptRecord(receipt, recordId.current);
       setMessage(await storeReceipt(userId, record));
-      void mirrorReceipt(record, {endpoint: sheetEndpoint, enabled: Boolean(sheetKey), key: sheetKey});
+      void mirrorReceipt(record, {enabled: sheetEnabled});
       return true;
     }
     catch (error) {setMessage(`Receipt was not saved: ${error.message} You can still save a local draft. Printing has not started.`); return false;}
@@ -117,17 +115,16 @@ export default function TimberReceipt({ userId = 'local', initialReceipt }) {
       <p className="hint">Saved shop details and this rate fill new receipts on this browser only. Clearing site data removes them.</p>
       </details>
       {!totals.valid && <p className="hint">Enter positive lengths and girths. Rates and payments must be zero or more. Incomplete receipts cannot be saved or printed.</p>}
-      {validSheetUrl(sheetEndpoint) && <details className="form sheet-mirror">
+      <details className="form sheet-mirror">
         <summary>Shared shop register setup</summary>
-        <p className="hint">When enabled, every receipt you save automatically sends its date, receipt number, customer, village, CFT, rate, total, paid and balance to the shop owner's Google Sheet. Your own saved receipt stays the main record. Sending may fail; check the Sheet yourself. No PDF is uploaded.</p>
-        <p className="hint">Only enable for this shop's work on a trusted device. The register key is stored in this browser for your signed-in account and is readable by anyone with access to this browser. Closing the app does not stop sharing.</p>
-        {sheetKey ? <><p>Automatic sharing is enabled on this device for this account.</p><button type="button" className="secondary" onClick={() => { try { localStorage.removeItem(mirrorSettingsKey); setSheetKey(''); setSheetSettingsMessage('Automatic sharing stopped.'); } catch { setSheetSettingsMessage('Could not clear the saved key.'); } }}>Stop automatic sharing</button></> : <>
-          <label>Register key (ask the shop owner)<input type="password" autoComplete="off" maxLength={256} value={sheetKeyInput} onChange={event => setSheetKeyInput(event.target.value)} /></label>
-          <button type="button" className="secondary" disabled={sheetKeyInput.trim().length < 24} onClick={() => { try { const key = sheetKeyInput.trim(); localStorage.setItem(mirrorSettingsKey, key); setSheetKey(key); setSheetKeyInput(''); setSheetSettingsMessage('Automatic sharing enabled. Future saves will be sent, but delivery cannot be confirmed here.'); } catch { setSheetSettingsMessage('Setup could not be saved on this device.'); } }}>Enable automatic sharing on this device</button>
+        <p className="hint">When enabled, every receipt you save automatically sends its date, receipt number, customer, village, CFT, rate, total, paid and balance to the shop owner's Google Form. If linked to a Sheet, each response is one text cell in its Form Responses tab, not nine separate register columns. Your own saved receipt stays the main record. No PDF is uploaded.</p>
+        <p className="hint">Only enable for this shop's work on a trusted device. Setup is saved for your signed-in account on this browser. Closing the app does not stop sharing. Sending may fail; check the responses yourself. Re-saving or printing can add duplicate rows.</p>
+        {sheetEnabled ? <><p>Automatic sharing is enabled on this device for this account.</p><button type="button" className="secondary" onClick={() => { try { localStorage.removeItem(mirrorSettingsKey); setSheetEnabled(false); setSheetSettingsMessage('Automatic sharing stopped.'); } catch { setSheetSettingsMessage('Could not clear the saved setup.'); } }}>Stop automatic sharing</button></> : <>
+          <button type="button" className="secondary" onClick={() => { try { localStorage.setItem(mirrorSettingsKey, 'yes'); setSheetEnabled(true); setSheetSettingsMessage('Automatic sharing enabled. Future saves will be sent, but delivery cannot be confirmed here.'); } catch { setSheetSettingsMessage('Setup could not be saved on this device.'); } }}>Enable automatic sharing on this device</button>
           <p className="hint">Without setup, receipts save normally but are not sent to the shared register. Past saves are not sent automatically.</p>
         </>}
         {sheetSettingsMessage && <p role="status">{sheetSettingsMessage}</p>}
-      </details>}
+      </details>
       <div className="receipt-actions"><button className="primary" type="button" disabled={busy} onClick={print}>Save PDF / print</button><button className="secondary" type="button" disabled={busy} onClick={saveCloud}>{busy ? 'Saving...' : 'Save receipt'}</button><button className="secondary" type="button" onClick={save}>Save draft</button><button className="secondary" type="button" onClick={load}>Open draft</button><button className="secondary" type="button" onClick={() => { if (confirm('Start a new receipt? Current entries will be cleared. Your saved draft and receipts will remain.')) { setReceipt(receiptWithSettings(userId)); recordId.current = crypto.randomUUID(); setMessage(''); } }}>New receipt</button></div>
       <p className="hint">Save receipt stores the complete receipt in your cloud account, or on this browser in local mode. PDF saves the receipt first, then opens the browser print menu. Choose "Save as PDF" if available. Drafts stay on this device only.</p>
       {message && <div className="notice" role="status">{message}</div>}
