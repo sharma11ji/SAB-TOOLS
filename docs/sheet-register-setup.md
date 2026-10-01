@@ -32,3 +32,26 @@ The existing response was copied into the matching columns while retaining its o
 - CFT uses four decimals; money uses two decimals. Total includes Labour and Transport. Overpayment produces a negative Balance. Mixed historical rates display Mixed.
 - Item contains distinct wood names from the receipt rows, separated by commas. Missing wood names stay blank. Tabs/newlines in names become spaces; URL encoding preserves Unicode and special characters.
 - One-time device enable explicitly shares customer/payment data with this register. Past receipts are not automatically backfilled.
+
+## Owner isolation
+
+Set `VITE_REGISTER_OWNER_UID` from Firebase Authentication > Users after verifying
+which account the shop owner actually uses in this app. Supply it as the matching
+GitHub Actions secret. Empty configuration disables the legacy Form for everyone.
+The Google account administering Firebase is not necessarily an app user.
+Other users' old local sharing flags are ignored and cleared. Both the UI and
+send helper require an exact UID match. The owner's existing form action,
+question IDs, per-device consent key and append behavior are unchanged.
+This is a client-side accidental-disclosure guard, not access control on the
+public Google Form endpoint: old clients or direct external submissions cannot
+be prevented by frontend code. Update cached clients after release.
+
+## Owner isolation (blocked until identity confirmation)
+
+Set VITE_REGISTER_OWNER_UID from the owner's confirmed Firebase app identity.
+Do not deploy with this setting empty: empty disables the Form for everyone.
+Other accounts' old sharing flags are ignored and cleared. UI and send helper
+both require the exact UID; the existing owner's protocol, question IDs and
+per-device consent key are unchanged. The Firebase console administrator account
+is not necessarily the app login account. This frontend guard prevents accidental
+cross-user sends, but cannot stop submissions from old clients to the public Form.
