@@ -4,6 +4,7 @@ import './timberReceipt.css';
 import {receiptRecord, validReceipt} from './receiptRecords';
 import {storeReceipt} from './ReceiptTools';
 import {FORM_ENDPOINT, mirrorReceipt} from './sheetMirror';
+import {db} from './firebase';
 
 const localDate = () => {
   const date = new Date();
@@ -61,7 +62,7 @@ export default function TimberReceipt({ userId = 'local', initialReceipt }) {
     try {
       const record = receiptRecord(receipt, recordId.current);
       setMessage(await storeReceipt(userId, record));
-      void mirrorReceipt(record, {enabled: sheetConsent.current});
+      if (userId !== 'local' && db) void mirrorReceipt(record, {enabled: sheetConsent.current});
       return true;
     }
     catch (error) {setMessage(`Receipt was not saved: ${error.message} You can still save a local draft. Printing has not started.`); return false;}
@@ -118,7 +119,7 @@ export default function TimberReceipt({ userId = 'local', initialReceipt }) {
       {!totals.valid && <p className="hint">Enter positive lengths and girths. Rates and payments must be zero or more. Incomplete receipts cannot be saved or printed.</p>}
       <details className="form sheet-mirror">
         <summary>Shared shop register setup</summary>
-        <p className="hint">When enabled, every receipt you save automatically sends its date, receipt number, customer, village, CFT, rate, total, paid and balance to the shop owner's Google Form. If linked to a Sheet, each response is one text cell in its Form Responses tab, not nine separate register columns. Your own saved receipt stays the main record. No PDF is uploaded.</p>
+        <p className="hint">When enabled, every receipt successfully saved to your cloud account automatically sends its date, receipt number, customer, village, wood items, CFT, rate, total, paid, balance, labour and transport to the shop owner's Google Form. If linked to a Sheet, each response fills separate register columns in its Form Responses tab. Older rows may still have a legacy Receipt data cell. Your own saved receipt stays the main record. No PDF is uploaded.</p>
         <p className="hint">Only enable for this shop's work on a trusted device. Setup is saved for your signed-in account on this browser. Closing the app does not stop sharing. Sending may fail; check the responses yourself. Re-saving or printing can add duplicate rows.</p>
         {sheetEnabled ? <><p>Automatic sharing is enabled on this device for this account.</p><button type="button" className="secondary" onClick={() => { try { localStorage.removeItem(mirrorSettingsKey); sheetConsent.current = false; setSheetEnabled(false); setSheetSettingsMessage('Automatic sharing stopped.'); } catch { setSheetSettingsMessage('Could not clear the saved setup.'); } }}>Stop automatic sharing</button></> : <>
           <button type="button" className="secondary" onClick={() => { try { localStorage.setItem(mirrorSettingsKey, 'yes'); sheetConsent.current = true; setSheetEnabled(true); setSheetSettingsMessage('Automatic sharing enabled. Future saves will be sent, but delivery cannot be confirmed here.'); } catch { setSheetSettingsMessage('Setup could not be saved on this device.'); } }}>Enable automatic sharing on this device</button>
