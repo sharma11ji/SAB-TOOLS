@@ -1,5 +1,11 @@
 import { receiptTotals } from './timberReceipt.js';
 
+// Set from the verified Firebase Authentication UID, never an email or display name.
+export const OWNER_UID = (import.meta.env?.VITE_REGISTER_OWNER_UID || '').trim();
+export function isRegisterOwner(uid, ownerUid = OWNER_UID) {
+  return Boolean(ownerUid && uid && uid !== 'local' && uid === ownerUid);
+}
+
 // Public form action and question IDs read from the published form, not secrets.
 export const FORM_ENDPOINT = 'https://docs.google.com/forms/d/e/1FAIpQLSc9xQyk-4_lkGYsMaZIBWA2l7pIST6w0aw6WdmthUcltINyOQ/formResponse';
 // Legacy question stays in the form for older deployed clients; new saves use these fields.
@@ -34,8 +40,8 @@ export function receiptFields(record) {
 }
 // Best-effort append-only mirror. An opaque response is NOT an acknowledgement.
 // Re-saving/printing can create duplicate responses. No keys or cookies sent.
-export async function mirrorReceipt(record, { enabled, fetcher = globalThis.fetch }) {
-  if (!enabled) return;
+export async function mirrorReceipt(record, { enabled, uid, ownerUid = OWNER_UID, fetcher = globalThis.fetch }) {
+  if (!enabled || !isRegisterOwner(uid, ownerUid)) return;
   try {
     await fetcher(FORM_ENDPOINT, {
       method: 'POST', mode: 'no-cors', credentials: 'omit',
