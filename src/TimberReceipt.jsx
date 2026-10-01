@@ -35,6 +35,7 @@ export default function TimberReceipt({ userId = 'local', initialReceipt }) {
   const mirrorSettingsKey = `sab-tools-form-enabled-v1:${userId}:${FORM_ENDPOINT}`;
   const [sheetEnabled, setSheetEnabled] = useState(() => { try { return localStorage.getItem(mirrorSettingsKey) === 'yes'; } catch { return false; } });
   const [sheetSettingsMessage, setSheetSettingsMessage] = useState('');
+  const sheetConsent = useRef(sheetEnabled);
   const recordId = useRef(crypto.randomUUID());
   const saving = useRef(false);
   useEffect(() => {
@@ -60,7 +61,7 @@ export default function TimberReceipt({ userId = 'local', initialReceipt }) {
     try {
       const record = receiptRecord(receipt, recordId.current);
       setMessage(await storeReceipt(userId, record));
-      void mirrorReceipt(record, {enabled: sheetEnabled});
+      void mirrorReceipt(record, {enabled: sheetConsent.current});
       return true;
     }
     catch (error) {setMessage(`Receipt was not saved: ${error.message} You can still save a local draft. Printing has not started.`); return false;}
@@ -119,8 +120,8 @@ export default function TimberReceipt({ userId = 'local', initialReceipt }) {
         <summary>Shared shop register setup</summary>
         <p className="hint">When enabled, every receipt you save automatically sends its date, receipt number, customer, village, CFT, rate, total, paid and balance to the shop owner's Google Form. If linked to a Sheet, each response is one text cell in its Form Responses tab, not nine separate register columns. Your own saved receipt stays the main record. No PDF is uploaded.</p>
         <p className="hint">Only enable for this shop's work on a trusted device. Setup is saved for your signed-in account on this browser. Closing the app does not stop sharing. Sending may fail; check the responses yourself. Re-saving or printing can add duplicate rows.</p>
-        {sheetEnabled ? <><p>Automatic sharing is enabled on this device for this account.</p><button type="button" className="secondary" onClick={() => { try { localStorage.removeItem(mirrorSettingsKey); setSheetEnabled(false); setSheetSettingsMessage('Automatic sharing stopped.'); } catch { setSheetSettingsMessage('Could not clear the saved setup.'); } }}>Stop automatic sharing</button></> : <>
-          <button type="button" className="secondary" onClick={() => { try { localStorage.setItem(mirrorSettingsKey, 'yes'); setSheetEnabled(true); setSheetSettingsMessage('Automatic sharing enabled. Future saves will be sent, but delivery cannot be confirmed here.'); } catch { setSheetSettingsMessage('Setup could not be saved on this device.'); } }}>Enable automatic sharing on this device</button>
+        {sheetEnabled ? <><p>Automatic sharing is enabled on this device for this account.</p><button type="button" className="secondary" onClick={() => { try { localStorage.removeItem(mirrorSettingsKey); sheetConsent.current = false; setSheetEnabled(false); setSheetSettingsMessage('Automatic sharing stopped.'); } catch { setSheetSettingsMessage('Could not clear the saved setup.'); } }}>Stop automatic sharing</button></> : <>
+          <button type="button" className="secondary" onClick={() => { try { localStorage.setItem(mirrorSettingsKey, 'yes'); sheetConsent.current = true; setSheetEnabled(true); setSheetSettingsMessage('Automatic sharing enabled. Future saves will be sent, but delivery cannot be confirmed here.'); } catch { setSheetSettingsMessage('Setup could not be saved on this device.'); } }}>Enable automatic sharing on this device</button>
           <p className="hint">Without setup, receipts save normally but are not sent to the shared register. Past saves are not sent automatically.</p>
         </>}
         {sheetSettingsMessage && <p role="status">{sheetSettingsMessage}</p>}
