@@ -1,5 +1,5 @@
 import {GoogleAuthProvider, reauthenticateWithPopup} from 'firebase/auth';
-import {collection, doc, getDoc, getDocs, runTransaction, serverTimestamp, setDoc} from 'firebase/firestore';
+import {collection, doc, getDoc, getDocs, runTransaction, serverTimestamp} from 'firebase/firestore';
 import {auth, db} from './firebase';
 import {SHEET_SCOPE, createPersonalSheet, writeSheetRow} from './personalSheetApi';
 const tokens = new Map(); // Never persisted in localStorage or Firestore.
@@ -107,6 +107,7 @@ export async function flushPersonalSheet(uid) {
       const data=row.data();
       if(!row.id.startsWith('sheet-row-') || !data.pending) continue;
       assertUser(uid);
+      if(tokens.get(uid)!==token) throw new Error('Google session changed. Reconnect to send pending receipts.');
       // Recheck stop-state before each network write. Already in-flight writes cannot be recalled.
       if(!(await readPersonalSheet(uid))?.enabled) return;
       await writeSheetRow(config.spreadsheetId,data.row,data.record,token);
