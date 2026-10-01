@@ -32,3 +32,13 @@ test('row-specific rates, labour, transport and piece count', () => {
  assert.equal(receiptTotals([{length:1,girth:48,rate:'-1'}],0,0).valid,false);
  assert.equal(receiptTotals([{length:1,girth:48}],0,0,-1,0).valid,false);
 });
+
+test('one rate applied to every wood updates amounts at 50 and 55', () => {
+ const measurements = [{length:2.37,girth:48}, {length:1,girth:48}];
+ for (const rate of ['50','55']) {
+  const rows = measurements.map(row => ({...row,rate}));
+  const result = receiptTotals(rows,rate,'0');
+  assert.deepEqual(result.amounts, rate === '50' ? [118.5,50] : [130.35,55]);
+  assert.equal(result.total, rate === '50' ? 168.5 : 185.35);
+ }
+});

@@ -44,14 +44,14 @@ export default function TimberReceipt({ userId = 'local', initialReceipt }) {
   const set = (field, value) => { setReceipt(old => ({ ...old, [field]: value })); setMessage(''); };
   const setRow = (id, field, value) => set('rows', receipt.rows.map(row => row.id === id ? { ...row, [field]: value } : row));
   const fields = [ ['shop', 'Shop / sawmill name'], ['shopAddress', 'Shop address'], ['mobile', 'Mobile number'], ['number', 'Receipt number'], ['date', 'Date'], ['customer', 'Customer name'], ['village', 'Customer address / village'] ];
-  const complete = totals.valid && receipt.shop.trim() && receipt.number.trim() && receipt.customer.trim() && receipt.date && receipt.rows.every(row => row.wood.trim());
+  const complete = totals.valid && receipt.shop.trim() && receipt.number.trim() && receipt.customer.trim() && receipt.date;
   const print = async () => {
-    if (!complete) { setMessage('For a receipt, fill in the shop, receipt number, date, customer, wood type and valid measurements for every row. Rates and payments must be zero or more.'); return; }
+    if (!complete) { setMessage('For a receipt, fill in the shop, receipt number, date, customer and valid measurements for every row. Rates and payments must be zero or more.'); return; }
     if (await saveCloud()) window.print();
   };
   const saveCloud = async () => {
     if (saving.current) return false;
-    if (!complete) {setMessage('Complete the shop, receipt number, date, customer, wood types and valid measurements first.'); return false;}
+    if (!complete) {setMessage('Complete the shop, receipt number, date, customer and valid measurements first.'); return false;}
     saving.current = true; setBusy(true);
     try {setMessage(await storeReceipt(userId, receiptRecord(receipt, recordId.current))); return true;}
     catch (error) {setMessage(`Receipt was not saved: ${error.message} You can still save a local draft. Printing has not started.`); return false;}
@@ -66,7 +66,7 @@ export default function TimberReceipt({ userId = 'local', initialReceipt }) {
     try {
       const settings = Object.fromEntries(['shop', 'shopAddress', 'mobile', 'rate'].map(field => [field, receipt[field]]));
       localStorage.setItem(settingsKey(userId), JSON.stringify(settings));
-      setMessage('Shop details and default rate saved in this browser. They will fill new receipts.');
+      setMessage('Shop details and rate saved in this browser. They will fill new receipts.');
     } catch { setMessage('Settings could not be saved.'); }
   };
   const load = () => {
@@ -83,24 +83,27 @@ export default function TimberReceipt({ userId = 'local', initialReceipt }) {
   return <section className="timber-tool" lang="en">
     <div className="receipt-editor">
       <h1>Timber CFT and receipt</h1>
-      <p>Enter length and girth. CFT and total CFT update automatically. Tap "+ Add wood" for the next piece.</p>
+      <p>Enter length, girth and one rate per CFT. Each wood amount and the total update automatically. Tap "+ Add wood" for the next piece.</p>
       <p className="hint">Length is in feet (ft), girth in inches (in). Girth is the circumference, not the diameter.</p>
 
       <h2>Wood measurements</h2>
+      <div className="form timber-rate"><label>Rate for all wood (₹ / CFT)<input aria-label="Rate for all wood (₹ / CFT)" type="number" inputMode="decimal" min="0" step="0.01" placeholder="e.g. 50 or 55" value={receipt.rate} onChange={event => { const rate = event.target.value; setReceipt(old => ({ ...old, rate, rows: old.rows.map(row => ({ ...row, rate })) })); setMessage(''); }} /></label><p className="hint">Enter the rate once. Amount = each wood's CFT × this rate.</p></div>
+      {receipt.rows.some(row => row.rate !== receipt.rate) && <p className="notice" role="status">This older receipt has individual wood rates. Its original amounts are preserved below. Enter a rate above to apply it to every wood.</p>}
       <div className="timber-rows">{receipt.rows.map((row, index) => <div className="timber-row form" key={row.id}>
         <div className="timber-row-head"><b>Wood {index + 1}</b><button type="button" className="secondary" aria-label={`Wood ${index + 1} Remove`} disabled={receipt.rows.length === 1} onClick={() => set('rows', receipt.rows.filter(item => item.id !== row.id))}>Remove</button></div>
 
         <div className="timber-measures">{[['length', 'Length (ft)'], ['girth', 'Girth (in)']].map(([field, label]) => <label key={field}>{label}<input id={field === 'length' ? `timber-length-${row.id}` : undefined} aria-label={`Wood ${index + 1} ${label}`} type="number" inputMode="decimal" min="0" step="any" placeholder="0" value={row[field]} onChange={event => setRow(row.id, field, event.target.value)} /></label>)}</div>
 <p className="row-volume">CFT: <b>{totals.volumes[index] === null ? 'Enter measurements' : decimal(totals.volumes[index])}</b> · Amount: <b>{totals.volumes[index] !== null && Number.isFinite(totals.amounts[index]) && Number(row.rate) >= 0 && row.rate !== '' ? money(totals.amounts[index]) : '-'}</b></p>
-        <details className="timber-optional"><summary>Wood type / rate (for receipt)</summary>        <label>Wood type<input aria-label={`Wood ${index + 1} type`} placeholder="e.g. Teak" maxLength={80} value={row.wood} onChange={event => setRow(row.id, 'wood', event.target.value)} /></label>        <label>Rate (₹ / CFT)<input aria-label={`Wood ${index + 1} Rate (₹ / CFT)`} type="number" inputMode="decimal" min="0" step="0.01" value={row.rate} onChange={event => setRow(row.id, 'rate', event.target.value)} /></label></details>
+        <details className="timber-optional"><summary>Wood type (optional)</summary><label>Wood type<input aria-label={`Wood ${index + 1} type`} placeholder="e.g. Teak" maxLength={80} value={row.wood} onChange={event => setRow(row.id, 'wood', event.target.value)} /></label></details>
       </div>)}</div>
       <button type="button" className="secondary wide" onClick={() => { const row = { ...newRow(), rate: receipt.rate }; set('rows', [...receipt.rows, row]); requestAnimationFrame(() => { const input = document.getElementById(`timber-length-${row.id}`); input?.focus(); input?.scrollIntoView({block: 'center', behavior: 'smooth'}); }); }}>+ Add wood</button>
       <div className="result"><span>Total CFT {totals.volumes.some(volume => volume === null) ? '(incomplete measurements)' : ''}</span><strong>{decimal(totals.cft)}</strong></div>
-      <details className="timber-billing"><summary>Need a receipt? Add names, rates and billing details</summary>
+      <div className="result"><span>Wood amount {totals.volumes.some(volume => volume === null) ? '(incomplete measurements)' : ''}</span><strong>{totals.valid ? money(totals.woodValue) : '-'}</strong></div>
+      <details className="timber-billing"><summary>Need a receipt? Add names and billing details</summary>
       <div className="form"><h2>Receipt details</h2><div className="two">{fields.map(([field, label]) => <label key={field}>{label}<input type={field === 'date' ? 'date' : field === 'mobile' ? 'tel' : 'text'} maxLength={field === 'mobile' ? 20 : 160} value={receipt[field]} onChange={event => set(field, event.target.value)} /></label>)}</div></div>
-      <div className="form two"><label>Default rate for all wood (₹ / CFT)<input type="number" inputMode="decimal" min="0" step="0.01" value={receipt.rate} onChange={event => setReceipt(old => ({ ...old, rate: event.target.value, rows: old.rows.map(row => ({ ...row, rate: event.target.value })) }))} /></label><label>Amount paid (₹)<input type="number" inputMode="decimal" min="0" step="0.01" value={receipt.advance} onChange={event => set('advance', event.target.value)} /></label><label>Sawing / cutting labour (₹)<input type="number" inputMode="decimal" min="0" step="0.01" value={receipt.labour} onChange={event => set('labour', event.target.value)} /></label><label>Transport (₹)<input type="number" inputMode="decimal" min="0" step="0.01" value={receipt.transport} onChange={event => set('transport', event.target.value)} /></label></div>
-      <button className="secondary" type="button" onClick={saveSettings}>Save shop details and default rate</button>
-      <p className="hint">Saved shop details and the default rate fill new receipts on this browser only. Clearing site data removes them. Individual wood rates are not saved as defaults.</p>
+      <div className="form two"><label>Amount paid (₹)<input type="number" inputMode="decimal" min="0" step="0.01" value={receipt.advance} onChange={event => set('advance', event.target.value)} /></label><label>Sawing / cutting labour (₹)<input type="number" inputMode="decimal" min="0" step="0.01" value={receipt.labour} onChange={event => set('labour', event.target.value)} /></label><label>Transport (₹)<input type="number" inputMode="decimal" min="0" step="0.01" value={receipt.transport} onChange={event => set('transport', event.target.value)} /></label></div>
+      <button className="secondary" type="button" onClick={saveSettings}>Save shop details and rate</button>
+      <p className="hint">Saved shop details and this rate fill new receipts on this browser only. Clearing site data removes them.</p>
       </details>
       {!totals.valid && <p className="hint">Enter positive lengths and girths. Rates and payments must be zero or more. Incomplete receipts cannot be saved or printed.</p>}
       <div className="receipt-actions"><button className="primary" type="button" disabled={busy} onClick={print}>Save PDF / print</button><button className="secondary" type="button" disabled={busy} onClick={saveCloud}>{busy ? 'Saving...' : 'Save receipt'}</button><button className="secondary" type="button" onClick={save}>Save draft</button><button className="secondary" type="button" onClick={load}>Open draft</button><button className="secondary" type="button" onClick={() => { if (confirm('Start a new receipt? Current entries will be cleared. Your saved draft and receipts will remain.')) { setReceipt(receiptWithSettings(userId)); recordId.current = crypto.randomUUID(); setMessage(''); } }}>New receipt</button></div>

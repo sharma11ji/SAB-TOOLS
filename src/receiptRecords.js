@@ -6,7 +6,7 @@ export function validReceipt(value) {
 export function receiptRecord(receipt, id) {
   if (!validReceipt(receipt)) throw new Error('Invalid receipt.');
   const totals = receiptTotals(receipt.rows, receipt.rate, receipt.advance, receipt.labour, receipt.transport);
-  if (!totals.valid || !receipt.shop.trim() || !receipt.number.trim() || !receipt.customer.trim() || !receipt.date || receipt.rows.some(row => !row.wood.trim())) throw new Error('Complete all receipt details first.');
+  if (!totals.valid || !receipt.shop.trim() || !receipt.number.trim() || !receipt.customer.trim() || !receipt.date) throw new Error('Complete all receipt details first.');
   return { ...receipt, id, type: 'receipt', savedAt: new Date().toISOString(), cft: totals.cft, total: totals.total, balance: totals.balance };
 }
 export function sortReceipts(records) {

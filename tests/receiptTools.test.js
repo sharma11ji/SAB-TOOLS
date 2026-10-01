@@ -21,3 +21,10 @@ test('saved list filters other history and sorts newest first',()=>{
  const two={...receiptRecord(receipt,'two'),savedAt:'2026-09-30'};
  assert.deepEqual(sortReceipts([one,{type:'other'},two,{type:'receipt'}]).map(item=>item.id),['two','one']);
 });
+
+test('wood type is optional and a single rate survives save and reopen',()=>{
+ const value = {...receipt,rate:'55',rows:[{wood:'',length:'2.37',girth:'48',rate:'55'}],advance:'0',labour:'0',transport:'0'};
+ const saved = receiptRecord(value,'single');
+ assert.equal(saved.total,130.35); assert.ok(validReceipt(saved));
+ assert.equal(receiptRecord(saved,'single').total,130.35);
+});
