@@ -4,6 +4,8 @@ import './timberReceipt.css';
 import {receiptRecord, validReceipt} from './receiptRecords';
 import {storeReceipt} from './ReceiptTools';
 import {FORM_ENDPOINT, mirrorReceipt, isRegisterOwner} from './sheetMirror';
+import PersonalSheetSetup from './PersonalSheetSetup';
+import {queuePersonalReceipt} from './personalSheet';
 import {db} from './firebase';
 
 const localDate = () => {
@@ -70,7 +72,13 @@ export default function TimberReceipt({ userId = 'local', initialReceipt }) {
     try {
       const record = receiptRecord(receipt, recordId.current);
       setMessage(await storeReceipt(userId, record));
-      if (userId !== 'local' && db) void mirrorReceipt(record, {enabled: sheetConsent.current, uid: userId});
+      if (userId !== 'local' && db) {
+        if (ownerRegister) void mirrorReceipt(record, {enabled: sheetConsent.current, uid: userId});
+        else {
+          try { if (await queuePersonalReceipt(userId, record)) setSheetSettingsMessage('Receipt sent to your Google Sheet.'); }
+          catch (error) { setSheetSettingsMessage(`Cloud receipt saved. Sheet sync needs attention: ${error.message}`); }
+        }
+      }
       return true;
     }
     catch (error) {setMessage(`Receipt was not saved: ${error.message} You can still save a local draft. Printing has not started.`); return false;}
@@ -134,7 +142,7 @@ export default function TimberReceipt({ userId = 'local', initialReceipt }) {
           <p className="hint">Without setup, receipts save normally but are not sent to the shared register. Past saves are not sent automatically.</p>
         </>}
         {sheetSettingsMessage && <p role="status">{sheetSettingsMessage}</p>}
-      </details> : <p className="hint">Your receipts stay in your own cloud account. A personal Google Sheet connection is being added. This account cannot send receipts to the shop owner's register.</p>}
+      </details> : userId !== 'local' && db ? <PersonalSheetSetup userId={userId} message={sheetSettingsMessage} onMessage={setSheetSettingsMessage}/> : <p className="hint">Sign in with Google to connect a personal register. Local drafts are not sent.</p>}
       <div className="receipt-actions"><button className="primary" type="button" disabled={busy} onClick={print}>Save PDF / print</button><button className="secondary" type="button" disabled={busy} onClick={saveCloud}>{busy ? 'Saving...' : 'Save receipt'}</button><button className="secondary" type="button" onClick={save}>Save draft</button><button className="secondary" type="button" onClick={load}>Open draft</button><button className="secondary" type="button" onClick={() => { if (confirm('Start a new receipt? Current entries will be cleared. Your saved draft and receipts will remain.')) { setReceipt(receiptWithSettings(userId)); recordId.current = crypto.randomUUID(); setMessage(''); } }}>New receipt</button></div>
       <p className="hint">Save receipt stores the complete receipt in your cloud account, or on this browser in local mode. PDF saves the receipt first, then opens the browser print menu. Choose "Save as PDF" if available. Drafts stay on this device only.</p>
       {message && <div className="notice" role="status">{message}</div>}
