@@ -3,7 +3,7 @@ import {connectPersonalSheet,readPersonalSheet,stopPersonalSheet,forgetSheetToke
 export default function PersonalSheetSetup({userId,message,onMessage}) {
  const [config,setConfig]=useState(null),[busy,setBusy]=useState(false);
  useEffect(()=>{let active=true;readPersonalSheet(userId).then(c=>{if(active)setConfig(c)}).catch(e=>onMessage(e.message));return()=>{active=false;forgetSheetToken(userId)}},[userId]);
- const connect=async()=>{setBusy(true);try{const c=await connectPersonalSheet(userId);setConfig(c);onMessage('Your Google Sheet is connected. Pending rows were sent.');}catch(e){onMessage(e.message)}finally{setBusy(false)}};
+ const connect=async()=>{setBusy(true);try{const c=await connectPersonalSheet(userId);setConfig(c);onMessage('Your Google Sheet is connected. Pending rows were sent.');}catch(e){try{setConfig(await readPersonalSheet(userId))}catch{}onMessage(e.message)}finally{setBusy(false)}};
  return <details className="form sheet-mirror"><summary>Your Google Sheet register</summary>
  <p className="hint">Create a private register in the Google account you use to sign in. Google asks permission for files this app creates, not all your spreadsheets. Your receipts never go to another shop's register. No Form or manual setup is needed.</p>
  <p className="hint">Cloud saving stays the main backup. Google access expires: reconnect after reopening the app or when asked. Pending receipts are kept in your cloud account and sent on reconnect. Saving again updates the same register row. Past receipts are not copied automatically. Do not insert, delete or reorder register rows: the app uses their positions to update receipts.</p>
