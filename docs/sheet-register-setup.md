@@ -1,29 +1,25 @@
-# SAB TOOLS shared receipt register
+# SAB TOOLS Google Form mirror
 
-This is an optional, best-effort mirror. The app's saved receipts remain the main record. PDF files are not uploaded. Missing mirror rows need manual checking; there is no delivery acknowledgement or automatic replay of offline/failed sends.
+Current destination: published form "sab tool resid", one short-answer question "Receipt data".
+https://docs.google.com/forms/d/e/1FAIpQLSc9xQyk-4_lkGYsMaZIBWA2l7pIST6w0aw6WdmthUcltINyOQ/viewform?usp=publish-editor
+
+No Apps Script, register key or GitHub webhook secret is used. The old Apps Script workflow is retired.
 
 ## Owner setup
 
-1. Open the private "SAB TOOLS Rasid Register" spreadsheet in the Google account that owns it. Keep it private; do not use "Anyone with the link" sharing.
-2. Use Extensions > Apps Script. On a phone, request Desktop site in Chrome if Extensions is not visible.
-3. Replace the starter Code.gs with the contents of SAB-TOOLS-Register.gs and save.
-4. Open Project Settings > Script Properties > Add script property. Name: REGISTER_KEY. Value: a unique random key of at least 24 characters. Create it privately with a password manager. Do not send it in a chat or put it in GitHub.
-5. Deploy > New deployment > select Web app. Execute as: Me. Who has access: Anyone. Authorize the exact script you pasted and your own Google account. If Google shows an unverified-app warning, inspect the project/account and requested permissions; stop if they are unexpected. Keep the Sheet itself private. This endpoint is public, but rejects missing/wrong keys and never returns stored data.
-6. Copy the deployed Web app URL ending /exec. The /dev test URL will not work for other users. Give only the /exec URL to the person wiring the app; no key is needed in GitHub.
-7. In repository Settings > Secrets and variables > Actions, add VITE_SHEET_WEBHOOK_URL with that URL. Adding a secret alone does not alter the existing live app. Merge/deploy only after reviewing the PR and authorizing go-live.
-8. Trusted shop users open Shared shop register setup, read what is shared, enter the key privately on their own trusted device and choose Enable automatic sharing on this device. Future saves mirror automatically. Setup is per signed-in account and browser. Stop automatic sharing removes the local key.
-9. Save one clearly labelled test receipt after deployment and open the Sheet to confirm its row. Save or print the same receipt again: the existing row should update, not duplicate. Compare paid, balance and totals. Only then use for shop work.
+1. Open the Form's EDITOR, not the public respondent link, in the owning Google account. Use the existing form in Google Forms or Drive. In Chrome on a phone, Desktop site may make controls easier to see.
+2. Tap Responses. Tap Link to Sheets (the green Sheets icon / Select destination for responses). Choose Select existing spreadsheet, then Select. Choose SAB TOOLS Rasid Register and confirm Select. Labels can vary by screen size; Google's current guide describes Responses > Summary > More > Select destination for responses as the alternate path.
+3. This creates a NEW Form Responses tab in that spreadsheet. It has Timestamp and Receipt data columns. It does NOT fill the original nine-column Receipts tab. Each saved receipt's nine values are one tab-separated text cell. Keep the destination spreadsheet private. Splitting those values into separate columns is a separate follow-up.
+4. Keep the Form published and accepting responses without requiring sign-in, verified emails, one-response-per-person or restrictive field validation. The app's background request sends no Google cookies. If settings change, check a labelled test again.
+5. Review PR #8 and approve go-live separately. No secret is required for this public endpoint. After deployment, each shop user opens Shared shop register setup and taps Enable automatic sharing on this device once. Every subsequent Save receipt or Save PDF/print sends automatically after its primary save succeeds. Setup is per signed-in account/browser; Stop automatic sharing disables it.
+6. With the owner's approval, save one labelled TEST receipt, then check Responses and the new linked Form Responses tab. Compare all nine values. Real end-to-end reception is not tested in this PR.
 
-## Boundaries
+## Limits
 
-- All configured shop users write to the same Sheet without gaining read access to it.
-- Date, receipt number, customer, village, CFT, rate, total, paid and balance are transmitted. The endpoint stores no app email or full PDF.
-- Total includes labour/transport. Balance can be negative for overpayment. Historical individual-rate receipts say Mixed.
-- A UUID stored in an A-cell note identifies a receipt. Do not delete these notes or edit header names. Copies/removal of notes can break duplicate prevention.
-- Save draft does not transmit. Save receipt and Save PDF/print transmit only after the normal primary save succeeds.
-- Runtime shared keys are light access control, not authenticated user identity. Anyone with the key can submit/update rows and consume script quotas. They can inspect a saved key on their device. Share only with trusted staff, rotate REGISTER_KEY if exposed, then set the new key on their devices.
-- A public VITE_ key would be readable by everyone, so this build never embeds one. VITE_SHEET_WEBHOOK_URL is public after build, even if supplied using GitHub Secrets.
-- no-cors responses are opaque. The app makes no "saved to Sheet" claim and no automatic retries. Network failure, bad key, script quotas or stopped requests may leave a missing row. This is not a reliable accounting ledger or offline sync system.
-- After editing a deployed script, use Deploy > Manage deployments > Edit > New version > Deploy.
+- This is best-effort append-only mirroring, not a reliable accounting ledger. The app's Firestore/local receipts stay the main record. No Sheet/Form success message is shown because no-cors responses are opaque.
+- No keys are used or sent. The public form may receive spam from anyone; responses are not proof of an app user's identity.
+- Re-saving and printing can create duplicates. No dedupe, automatic retry or replay of offline/missing sends. Drafts do not transmit. No PDF upload.
+- Field order: date, receipt no, customer, village, total CFT (4 decimals), rate, total amount (2 decimals), paid (2 decimals), balance (2 decimals). Names' tabs/newlines become spaces to preserve nine fields. Mixed older rates show Mixed. Total includes labour/transport; overpayment gives negative balance.
+- One-time device enable is an explicit choice to send customer/payment data into the owner's shared register. Past saved receipts are not backfilled.
 
-References: https://developers.google.com/apps-script/guides/web ; https://developers.google.com/apps-script/guides/content ; https://developer.mozilla.org/en-US/docs/Web/API/Request/mode
+Sources: https://support.google.com/docs/answer/2917686?hl=en ; https://developer.mozilla.org/en-US/docs/Web/API/Request/mode
