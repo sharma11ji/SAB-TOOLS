@@ -17,11 +17,11 @@ test('no permission means no transmission', async () => {
   let calls=0; await mirrorReceipt(receipt,{enabled:false,fetcher:()=>{calls++;}});assert.equal(calls,0);
 });
 test('url-encoded no-cors form POST includes exactly one entry and no key or cookies', async () => {
-  let called=false;await mirrorReceipt(receipt,{enabled:true,fetcher:async(url,init)=>{
-    called=true;assert.equal(url,FORM_ENDPOINT);assert.equal(init.mode,'no-cors');assert.equal(init.credentials,'omit');
-    const params=new URLSearchParams(init.body);assert.deepEqual([...params.keys()],[FORM_ENTRY]);assert.equal(params.get(FORM_ENTRY),receiptLine(receipt));
-    return {get ok(){throw new Error('must not inspect opaque response');}};
-  }});assert.equal(called,true);
+  let request; await mirrorReceipt(receipt,{enabled:true,fetcher:async(url,init)=>{
+    request={url,init}; return {get ok(){throw new Error('must not inspect opaque response');}};
+  }});
+  assert.ok(request);assert.equal(request.url,FORM_ENDPOINT);assert.equal(request.init.mode,'no-cors');assert.equal(request.init.credentials,'omit');
+  const params=new URLSearchParams(request.init.body);assert.deepEqual([...params.keys()],[FORM_ENTRY]);assert.equal(params.get(FORM_ENTRY),receiptLine(receipt));
 });
 test('network failure never rejects or retries the primary save', async () => {
   let calls=0;await mirrorReceipt(receipt,{enabled:true,fetcher:async()=>{calls++;throw Error('offline');}});assert.equal(calls,1);
