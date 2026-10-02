@@ -145,6 +145,9 @@ export async function replacePersonalSheet(uid) {
       if(profile.data()?.sheetRecovery?.attempt!==attempt) throw new Error('Recovery state changed.');
       tx.update(configRef(uid),{sheetRecovery:null});
     });
+    // A hung old request may still occupy this device's local promise. Its
+    // destination is retired, so let the replacement acquire its own lock.
+    flushing.delete(uid);
     await flushPersonalSheet(uid);
     return await readPersonalSheet(uid);
   } catch(error) {
@@ -198,6 +201,6 @@ export async function flushPersonalSheet(uid) {
     });
   })();
   flushing.set(uid,job);
-  try {await job;} finally {flushing.delete(uid);}
+  try {await job;} finally {if(flushing.get(uid)===job)flushing.delete(uid);}
 }
 export function forgetSheetToken(uid) {tokens.delete(uid);}
