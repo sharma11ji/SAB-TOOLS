@@ -2,6 +2,7 @@ import React, {useEffect, useState} from "react";
 import {firebaseReady} from "./firebase";
 import {authError,initAuthPersistence,loginEmail,loginGoogle,logout,registerEmail,resetPassword,watchAuth} from "./authService";
 import TimberReceipt from "./TimberReceipt";
+import AccountMenu from "./AccountMenu";
 import {SavedReceipts, LevelTool} from "./ReceiptTools";
 import {email} from "./validation";
 
@@ -11,7 +12,7 @@ export default function App(){
  useEffect(()=>{const update=()=>setOnline(navigator.onLine);addEventListener("online",update);addEventListener("offline",update);return()=>{removeEventListener("online",update);removeEventListener("offline",update)}},[]);
  if(loading)return <div className="splash"><b>SAB TOOLS</b><span>Checking secure session...</span></div>;
  if(!user&&firebaseReady)return <AuthScreen mode={authMode} setMode={setAuthMode} online={online}/>;
- return <div className="app"><header><div><div className="brand">SAB TOOLS</div><div className="tag">Timber CFT and receipts</div></div><div className="headerRight">{user&&<span className="signed-in-account" aria-label="Signed-in account">{user.email||"Signed in"}</span>}<span className={"status "+(online?"on":"off")}>{online?"Online":"Offline"}</span>{user&&<button className="user" onClick={()=>logout()}>Log out</button>}</div></header><main>
+ return <div className="app"><header><div><img className="brand-logo" src={`${import.meta.env.BASE_URL}icons/1-timber-logo.png`} alt="SAB TOOLS" width="40" height="40"/><div className="tag">Timber CFT and receipts</div></div><div className="headerRight"><span className={"status "+(online?"on":"off")}>{online?"Online":"Offline"}</span>{user&&<div aria-label="Signed-in account"><AccountMenu key={user.uid} user={user} onLogout={logout}/></div>}</div></header><main>
  {!firebaseReady&&<p className="hint local-mode-banner">Local mode: Firebase is unavailable. You can create and save receipts on this device.</p>}
  <div hidden={tab!=="Home"}><h1>Your tools</h1><div className="grid"><button className="card" onClick={()=>setTab("Receipt")}><b>Timber receipt / CFT</b><span>Wood measurements and billing</span><small>2304 formula · Receipts · Print / PDF</small></button><button className="card" onClick={()=>setTab("Saved")}><b>Saved receipts</b><span>Open your past receipts</span></button><button className="card" onClick={()=>setTab("Level")}><b>Bubble level</b><span>Check surface tilt with your phone</span></button></div></div>
  <div hidden={tab!=="Receipt"}><TimberReceipt key={user?.uid||"local"} userId={user?.uid||"local"} initialReceipt={openedReceipt?.uid===(user?.uid||"local")?openedReceipt.receipt:null}/></div>
