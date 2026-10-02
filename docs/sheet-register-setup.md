@@ -71,7 +71,7 @@ Receipts successfully saved to cloud are queued under the signed-in user's
 `preferences/sheet-row-{receiptId}`. Firestore transactions allocate a stable row
 number and version. Re-save and retry overwrite that same row via values.update
 with RAW input, not append; formula-looking customer text stays text. Retry is
-safe even after an ambiguous timeout. Do not reorder, insert or delete register
+not automatically retried after an ambiguous timeout; delivery stays locked until replacement recovery. Do not reorder, insert or delete register
 rows: allocated row positions are part of this version's sync contract. Editing
 receipt fields in the Sheet does not change cloud receipts and is overwritten on
 re-save. Stop disables future sync across devices; requests already in flight
