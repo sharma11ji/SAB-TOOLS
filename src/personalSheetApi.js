@@ -12,8 +12,11 @@ export async function sheetRequest(path, token, {method='GET', body, fetcher=glo
     ...(body ? {body:JSON.stringify(body)} : {}),
   });
   if (!response.ok) {
-    if (response.status === 401) throw new Error('Reconnect Google to send pending receipts.');
-    if (response.status === 403) throw new Error('Google denied access. Check the Sheet permission and that Sheets API is enabled.');
+    if (response.status === 401 || response.status === 403) {
+      const error = new Error(response.status === 401 ? 'Reconnect Google to send pending receipts.' : 'Google denied access. Check the Sheet permission and that Sheets API is enabled.');
+      error.definiteNoWrite = true;
+      throw error;
+    }
     throw new Error(`Google Sheet request failed (${response.status}). Receipt remains pending.`);
   }
   return response.json();
@@ -27,7 +30,8 @@ export async function createPersonalSheet(token, options={}) {
 }
 export async function writeSheetRow(id, row, record, token, options={}) {
   if (!/^[a-zA-Z0-9_-]+$/.test(id) || !Number.isInteger(row) || row<2) throw new Error('Invalid Sheet destination.');
-  // Stable row allocated in Firestore makes retry safe, including ambiguous timeouts.
+  // Stable row allocated in Firestore keeps confirmed updates on the same row.
+  // Ambiguous sends are NOT retried automatically; the durable lock is retained.
   // RAW keeps customer text beginning with '=' from becoming a spreadsheet formula.
   const range=`Receipts!A${row}:M${row}`;
   const result=await sheetRequest(`/${id}/values/${encodeURIComponent(range)}?valueInputOption=RAW`,token,
