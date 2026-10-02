@@ -2,10 +2,10 @@ import React,{useEffect,useRef,useState} from 'react';
 import {accountIdentity} from './accountIdentity';
 
 export default function AccountMenu({user,onLogout}){
- const {name,initials,photoURL,email}=accountIdentity(user);
- const [open,setOpen]=useState(false),[photoFailed,setPhotoFailed]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ const {name,email}=accountIdentity(user);
+ const [open,setOpen]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('');
  const container=useRef(null),trigger=useRef(null),logoutButton=useRef(null);
- useEffect(()=>{setOpen(false);setPhotoFailed(false);setError('')},[user.uid,photoURL]);
+ useEffect(()=>{setOpen(false);setError('')},[user.uid]);
  useEffect(()=>{
   if(!open)return;
   logoutButton.current?.focus();
@@ -18,12 +18,10 @@ export default function AccountMenu({user,onLogout}){
  const signOut=async()=>{setBusy(true);setError('');try{await onLogout();setOpen(false)}catch{setError('Could not log out. Please try again.')}finally{setBusy(false)}};
  return <div className="account-menu" ref={container} onBlur={e=>{if(!e.currentTarget.contains(e.relatedTarget))setOpen(false)}}>
   <button className="account-trigger" ref={trigger} aria-label={`Account menu for ${name}`} aria-expanded={open} aria-controls="account-dropdown" onClick={()=>setOpen(value=>!value)}>
-   <span className="account-avatar" aria-hidden="true">{photoURL&&!photoFailed?<img src={photoURL} alt="" referrerPolicy="no-referrer" onError={()=>setPhotoFailed(true)}/>:initials}</span>
-   <span className="account-details"><span className="account-name" title={name}>{name}</span><span className="signed-in-account" aria-label="Signed-in account" title={email}>{email}</span></span>
-   <span className="account-chevron" aria-hidden="true">▾</span>
+   <svg className="account-hamburger" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
   </button>
   {open&&<div className="account-dropdown" id="account-dropdown" aria-label="Account options">
-   <div className="account-menu-identity"><b>{name}</b><span>{email}</span></div>
+   <div className="account-menu-identity"><span className="account-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg></span><div className="account-menu-text"><b>{name}</b><span>{email}</span></div></div>
    <button className="account-logout" ref={logoutButton} disabled={busy} onClick={signOut}>{busy?'Logging out...':'Log out'}</button>
    {error&&<p className="account-menu-error" role="alert">{error}</p>}
   </div>}
