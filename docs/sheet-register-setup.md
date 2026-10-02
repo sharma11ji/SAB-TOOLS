@@ -93,3 +93,29 @@ Official references:
 - https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/create
 - https://firebase.google.com/docs/auth/web/google-signin
 - https://developers.google.com/identity/oauth2/web/guides/use-token-model
+
+## Safe-stop delivery and replacement recovery
+
+A durable Firestore `sheetDelivery` lock pins each sender to one spreadsheet ID.
+It has no timeout and is not cleared by reconnect. After each confirmed row PUT,
+the sender rereads pending versions so a concurrent update is sent next rather
+than allowing two devices to write overlapping versions. Explicit 401/403
+responses release the lock and retain pending rows. Network failures, 5xx errors,
+or missing acknowledgement keep the lock: a late Google write cannot be ruled
+out. Cloud saving continues while Sheet delivery is paused.
+
+Never add a force-unlock or timer expiry. A client cannot prove an abandoned
+request has finished. The recovery UI instead requires review and confirmation
+to create a NEW private register, preserve the previous register and its lock in
+a `retired-sheet-*` preferences record, and copy latest cloud receipts. The new
+spreadsheet ID fences old requests to the retired register. After replacement,
+use only the new register. During recovery `sheetRecovery` prevents senders and
+another replacement. Interrupted provisioning/copying stays paused for support;
+ordinary reconnect must not create another replacement or clear recovery state.
+
+The delivery engine and actual module adapters have deterministic tests for
+concurrent devices, newer pending versions, ambiguous responses, definite auth
+rejections, replacement fencing, and failed cleanup. These tests use a simulated
+Firestore transaction adapter, not a live Firebase emulator. The original live
+Google happy-path test predates this hardening. Real hardened recovery and
+expired/revoked access still need a test-only preview run before release.
