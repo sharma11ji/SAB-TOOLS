@@ -39,7 +39,7 @@ test('per-user configuration, OAuth reauth and queue never persist tokens',()=>{
  assert.match(source,/auth.currentUser.uid !== uid/);
  assert.match(source,/config.uid!==uid/);
  assert.match(source,/sheetProvisioning/);
- assert.match(source,/version===data.version/);
+ assert.match(source,/version===row.version/);
  assert.ok(!source.includes('localStorage.'));
  assert.ok(!/setDoc[^;]+token/.test(source));
 });
