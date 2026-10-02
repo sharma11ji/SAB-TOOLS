@@ -31,8 +31,8 @@ test('real module serializes two devices and sends newest pending version',{time
  const {e,a,b}=await fixture();await a.connectPersonalSheet('test-user');await b.connectPersonalSheet('test-user');
  const sent=deferred(),response=deferred();let first=true;
  e.write=async(id,row,r)=>{e.writes.push({id,row,record:clone(r)});if(first){first=false;sent.resolve();await response.promise}};
- const old=a.queuePersonalReceipt('test-user',{...receipt,customer:'old'});await sent.promise;
- await assert.rejects(b.queuePersonalReceipt('test-user',{...receipt,customer:'new'}),/paused/);response.resolve();await old;
+ e.data.set(root+'/history/r1',{...receipt,customer:'old'});const old=a.queuePersonalReceipt('test-user',{...receipt,customer:'old'});await sent.promise;
+ e.data.set(root+'/history/r1',{...receipt,customer:'new'});await assert.rejects(b.queuePersonalReceipt('test-user',{...receipt,customer:'new'}),/paused/);response.resolve();await old;
  assert.deepEqual(e.writes.map(w=>w.record.customer),['old','new']);assert.equal(e.data.get(root).sheetDelivery,null);
 });
 test('real replacement preserves abandoned lock and copies cloud source',{timeout:4000},async()=>{
@@ -51,15 +51,20 @@ test('real delayed writer is fenced to retired destination during replacement',{
  const {e,a,b}=await fixture();await a.connectPersonalSheet('test-user');await b.connectPersonalSheet('test-user');
  const sent=deferred(),response=deferred();let first=true;
  e.write=async(id,row,r)=>{if(first){first=false;sent.resolve();await response.promise}e.writes.push({id,row,record:clone(r)})};
- const old=a.queuePersonalReceipt('test-user',{...receipt,customer:'old'});const rejected=assert.rejects(old,/paused/);await sent.promise;
- await b.replacePersonalSheet('test-user');response.resolve();await rejected;
+ e.data.set(root+'/history/r1',{...receipt,customer:'old'});const old=a.queuePersonalReceipt('test-user',{...receipt,customer:'old'});const rejected=assert.rejects(old,/paused/);await sent.promise;
+ e.data.set(root+'/history/r1',receipt);await b.replacePersonalSheet('test-user');response.resolve();await rejected;
  assert.deepEqual(e.writes.map(w=>[w.id,w.record.customer]),[['new-1','latest'],['old','old']]);assert.equal(e.data.get(root).personalSheet.spreadsheetId,'new-1');assert.equal(e.data.get(root).sheetDelivery,null);
 });
 test('same device replacement proceeds without waiting on hung retired PUT',{timeout:4000},async()=>{
  const {e,a}=await fixture();await a.connectPersonalSheet('test-user');
  const sent=deferred(),response=deferred();let first=true;
  e.write=async(id,row,r)=>{if(first){first=false;sent.resolve();await response.promise}e.writes.push({id,row,record:clone(r)})};
- const old=a.queuePersonalReceipt('test-user',{...receipt,customer:'old'});const rejected=assert.rejects(old,/paused/);await sent.promise;
- await a.replacePersonalSheet('test-user');assert.equal(e.writes.at(-1).id,'new-1');response.resolve();await rejected;
+ e.data.set(root+'/history/r1',{...receipt,customer:'old'});const old=a.queuePersonalReceipt('test-user',{...receipt,customer:'old'});const rejected=assert.rejects(old,/paused/);await sent.promise;
+ e.data.set(root+'/history/r1',receipt);await a.replacePersonalSheet('test-user');assert.equal(e.writes.at(-1).id,'new-1');response.resolve();await rejected;
  assert.equal(e.data.get(root).sheetDelivery,null);
+});
+test('delayed queue caller cannot override newer cloud record',{timeout:4000},async()=>{
+ const {e,a}=await fixture();await a.connectPersonalSheet('test-user');
+ await a.queuePersonalReceipt('test-user',{...receipt,customer:'stale caller'});
+ assert.equal(e.writes.at(-1).record.customer,'latest');
 });
