@@ -1,4 +1,4 @@
-const CACHE = "sab-tools-shell-v8";
+const CACHE = "sab-tools-shell-v9";
 const appUrl = (path) => new URL(path, self.registration.scope).href;
 const INDEX_URL = appUrl("index.html");
 const ASSETS = [appUrl("./"), INDEX_URL, appUrl("manifest.webmanifest")];
