@@ -82,14 +82,17 @@ export async function queuePersonalReceipt(uid, record) {
   if (!/^[a-zA-Z0-9_-]+$/.test(record.id)) throw new Error('Invalid receipt ID.');
   const ref=doc(rowsRef(uid),`sheet-row-${record.id}`);
   const queued=await runTransaction(db,async tx=>{
-    const [profile,row]=await Promise.all([tx.get(configRef(uid)),tx.get(ref)]);
+    const sourceRef=doc(db,'users',uid,'history',record.id);
+    const [profile,row,source]=await Promise.all([tx.get(configRef(uid)),tx.get(ref),tx.get(sourceRef)]);
     const config=profile.data()?.personalSheet;
     if (!config?.enabled) return false;
     if(config.uid!==uid) throw new Error('Sheet account mismatch. Nothing was sent.');
     const allocated=row.data()?.row || config.nextRow;
     if(!Number.isInteger(allocated)||allocated<2) throw new Error('Invalid Sheet setup.');
     if(!row.exists()) tx.set(configRef(uid),{personalSheet:{...config,nextRow:allocated+1}},{merge:true});
-    tx.set(ref,{row:allocated,record,pending:true,version:(row.data()?.version||0)+1,
+    if(!source.exists()) throw new Error('Cloud receipt is missing. Nothing was queued.');
+    // A delayed caller must not replace a newer cloud save with its old payload.
+    tx.set(ref,{row:allocated,record:{...source.data(),id:record.id},pending:true,version:(row.data()?.version||0)+1,
       createdAt:row.data()?.createdAt||serverTimestamp(),updatedAt:serverTimestamp()});
     return true;
   });
