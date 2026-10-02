@@ -46,12 +46,76 @@ This is a client-side accidental-disclosure guard, not access control on the
 public Google Form endpoint: old clients or direct external submissions cannot
 be prevented by frontend code. Update cached clients after release.
 
-## Owner isolation (blocked until identity confirmation)
+## Personal private Sheets (new accounts)
 
-Set VITE_REGISTER_OWNER_UID from the owner's confirmed Firebase app identity.
-Do not deploy with this setting empty: empty disables the Form for everyone.
-Other accounts' old sharing flags are ignored and cleared. UI and send helper
-both require the exact UID; the existing owner's protocol, question IDs and
-per-device consent key are unchanged. The Firebase console administrator account
-is not necessarily the app login account. This frontend guard prevents accidental
-cross-user sends, but cannot stop submissions from old clients to the public Form.
+The personal register uses Sheets API directly, not a Google Form. Forms API's
+`linkedSheetId` is output-only and its update methods cannot link a response
+spreadsheet. Each Google user taps Connect, consents to `drive.file`, and a
+private Sheet with 13 columns (receipt ID + the existing 12 receipt fields) is
+created in their Google account. Destination configuration is stored only in
+`users/{uid}.personalSheet`. The existing owner Form stays unchanged.
+
+Before release: enable Google Sheets API on the Firebase OAuth project, add
+`drive.file` to its OAuth consent data access configuration, check public-user
+availability, and test actual Google consent with a non-owner test account.
+No new client secret or broad `spreadsheets` scope is needed. Use the same Firebase
+Google OAuth client. Email/password-only users must use Google sign-in first.
+
+This is client-only sync while the app is open with a current Google token, NOT
+permanent background sync. After reload or token expiry, reconnect Google to send
+pending receipts. Access tokens live in memory only. For unattended sync without
+reconnect, a separately approved backend with secured refresh-token storage is
+required. Firebase session persistence does not refresh Google API access.
+
+Receipts successfully saved to cloud are queued under the signed-in user's
+`preferences/sheet-row-{receiptId}`. Firestore transactions allocate a stable row
+number and version. Re-save and retry overwrite that same row via values.update
+with RAW input, not append; formula-looking customer text stays text. Retry is
+not automatically retried after an ambiguous timeout; delivery stays locked until replacement recovery. Do not reorder, insert or delete register
+rows: allocated row positions are part of this version's sync contract. Editing
+receipt fields in the Sheet does not change cloud receipts and is overwritten on
+re-save. Stop disables future sync across devices; requests already in flight
+cannot be recalled. Pending rows stay until reconnect. Existing past receipts are
+not backfilled automatically. Cloud receipts remain the primary record.
+
+A durable Firestore provisioning lock prevents simultaneous first-time setup
+across devices. The lock is never automatically expired: a timed-out Google
+create could have succeeded. Partial provisioning shows a recovery-needed error
+and the real Sheet URL if known, rather than creating another Sheet. Recovery
+requires inspecting the Google account and user profile before clearing the lock
+or completing its destination configuration. Existing pending receipts are not
+lost. A missing/deleted or inaccessible Sheet never falls back to the owner Form.
+
+Official references:
+- https://developers.google.com/workspace/forms/api/reference/rest/v1/forms
+- https://developers.google.com/workspace/forms/api/reference/rest/v1/forms/batchUpdate
+- https://developers.google.com/workspace/sheets/api/scopes
+- https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/create
+- https://firebase.google.com/docs/auth/web/google-signin
+- https://developers.google.com/identity/oauth2/web/guides/use-token-model
+
+## Safe-stop delivery and replacement recovery
+
+A durable Firestore `sheetDelivery` lock pins each sender to one spreadsheet ID.
+It has no timeout and is not cleared by reconnect. After each confirmed row PUT,
+the sender rereads pending versions so a concurrent update is sent next rather
+than allowing two devices to write overlapping versions. Explicit 401/403
+responses release the lock and retain pending rows. Network failures, 5xx errors,
+or missing acknowledgement keep the lock: a late Google write cannot be ruled
+out. Cloud saving continues while Sheet delivery is paused.
+
+Never add a force-unlock or timer expiry. A client cannot prove an abandoned
+request has finished. The recovery UI instead requires review and confirmation
+to create a NEW private register, preserve the previous register and its lock in
+a `retired-sheet-*` preferences record, and copy latest cloud receipts. The new
+spreadsheet ID fences old requests to the retired register. After replacement,
+use only the new register. During recovery `sheetRecovery` prevents senders and
+another replacement. Interrupted provisioning/copying stays paused for support;
+ordinary reconnect must not create another replacement or clear recovery state.
+
+The delivery engine and actual module adapters have deterministic tests for
+concurrent devices, newer pending versions, ambiguous responses, definite auth
+rejections, replacement fencing, and failed cleanup. These tests use a simulated
+Firestore transaction adapter, not a live Firebase emulator. The original live
+Google happy-path test predates this hardening. Real hardened recovery and
+expired/revoked access still need a test-only preview run before release.

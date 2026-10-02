@@ -20,13 +20,15 @@ export async function storeReceipt(uid, record) {
 export function SavedReceipts({userId, onOpen, active}) {
   const [receipts, setReceipts] = useState([]), [error, setError] = useState(''), [loading, setLoading] = useState(true);
   useEffect(() => {
-    if (!active) return;
     setReceipts([]); setError(''); setLoading(true);
+    if (!active) return;
     if (userId === 'local' || !db) {
       try {setReceipts(sortReceipts(JSON.parse(localStorage.getItem(receiptKey(userId)) || '[]')));} catch {setError('Saved receipts could not be read on this device.');}
       setLoading(false); return;
     }
-    return watchRecords(userId, 'history', data => {setReceipts(sortReceipts(data)); setLoading(false); setError('');}, () => {setError('Cloud receipts could not be loaded. Check your connection and account permissions.'); setLoading(false);});
+    let current=true;
+    const unsubscribe=watchRecords(userId, 'history', data => {if(!current)return;setReceipts(sortReceipts(data)); setLoading(false); setError('');}, () => {if(!current)return;setReceipts([]);setError('Cloud receipts could not be loaded. Check your connection and account permissions.'); setLoading(false);});
+    return ()=>{current=false;unsubscribe();};
   }, [userId, active]);
   return <section><h1>Saved receipts</h1><p className="hint">{userId === 'local' ? 'Stored on this browser only. Clearing site data deletes these receipts.' : 'Receipts saved in your signed-in cloud account.'}</p>{loading && <p role="status">Loading receipts...</p>}{error && <p className="error" role="alert">{error}</p>}{!loading && !error && !receipts.length && <p className="empty">No saved receipts yet. Complete a receipt and tap "Save receipt".</p>}<div className="saved-list">{receipts.map(receipt => <button className="saved-receipt" key={receipt.id} onClick={() => onOpen(receipt)}><b>Receipt #{receipt.number} · {receipt.customer}</b><span>{receipt.date.split('-').reverse().join('/')} · CFT {Number(receipt.cft).toFixed(4)} · {Number(receipt.total).toLocaleString('en-IN', {style:'currency', currency:'INR'})}</span><small>Open receipt</small></button>)}</div></section>;
 }
