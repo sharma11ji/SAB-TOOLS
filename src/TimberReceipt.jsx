@@ -75,8 +75,11 @@ export default function TimberReceipt({ userId = 'local', initialReceipt }) {
       if (userId !== 'local' && db) {
         if (ownerRegister) void mirrorReceipt(record, {enabled: sheetConsent.current, uid: userId});
         else {
-          try { if (await queuePersonalReceipt(userId, record)) setSheetSettingsMessage('Receipt sent to your Google Sheet.'); }
-          catch (error) { setSheetSettingsMessage(`Cloud receipt saved. Sheet sync needs attention: ${error.message}`); }
+          // Sheet delivery must not keep cloud-save/print busy on a hung request.
+          setSheetSettingsMessage('Cloud receipt saved. Checking your Google Sheet delivery.');
+          void queuePersonalReceipt(userId, record).then(queued => {
+            if (queued) setSheetSettingsMessage('Receipt sent to your Google Sheet.');
+          }).catch(error => setSheetSettingsMessage(`Cloud receipt saved. Sheet sync needs attention: ${error.message}`));
         }
       }
       return true;
