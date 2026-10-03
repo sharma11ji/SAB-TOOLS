@@ -15,7 +15,7 @@ const localDate = () => {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 };
 const newRow = () => ({ id: crypto.randomUUID(), wood: '', length: '', girth: '', rate: '0' });
-const newReceipt = () => ({ shop: '', shopAddress: '', mobile: '', number: '1', date: localDate(), customer: '', village: '', rate: '0', advance: '0', labour: '0', transport: '0', rows: [newRow()] });
+const newReceipt = () => ({ shop: '', shopAddress: '', mobile: '', number: '1', date: localDate(), customer: '', customerMobile: '', village: '', rate: '0', advance: '0', labour: '0', transport: '0', rows: [newRow()] });
 const decimal = value => value.toLocaleString('en-IN', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
 const money = value => value.toLocaleString('en-IN', { style: 'currency', currency: 'INR' });
 
@@ -55,7 +55,7 @@ export default function TimberReceipt({ userId = 'local', initialReceipt }) {
   const saving = useRef(false);
   useEffect(() => {
     if (!initialReceipt || !validReceipt(initialReceipt)) return;
-    setReceipt({...initialReceipt, rows: initialReceipt.rows.map(row => ({...row, id: crypto.randomUUID()}))});
+    setReceipt({...initialReceipt, customerMobile: initialReceipt.customerMobile || '', rows: initialReceipt.rows.map(row => ({...row, id: crypto.randomUUID()}))});
     revision.current = initialReceipt.revision || 0;
     recordId.current = initialReceipt.id || crypto.randomUUID();
     setMessage('Saved receipt opened. Saving again updates this receipt.');
@@ -64,7 +64,7 @@ export default function TimberReceipt({ userId = 'local', initialReceipt }) {
   const totals = receiptTotals(receipt.rows, receipt.rate, receipt.advance, receipt.labour, receipt.transport);
   const set = (field, value) => { setReceipt(old => ({ ...old, [field]: value })); setMessage(''); };
   const setRow = (id, field, value) => set('rows', receipt.rows.map(row => row.id === id ? { ...row, [field]: value } : row));
-  const fields = [ ['shop', 'Shop / sawmill name'], ['shopAddress', 'Shop address'], ['mobile', 'Mobile number'], ['number', 'Receipt number'], ['date', 'Date'], ['customer', 'Customer name'], ['village', 'Customer address / village'] ];
+  const fields = [ ['shop', 'Shop / sawmill name'], ['shopAddress', 'Shop address'], ['mobile', 'Mobile number'], ['number', 'Receipt number'], ['date', 'Date'], ['customer', 'Customer name'], ['customerMobile', 'Customer mobile (optional)'], ['village', 'Customer address / village'] ];
   const complete = totals.valid && receipt.shop.trim() && receipt.number.trim() && receipt.customer.trim() && receipt.date;
   const print = async () => {
     if (!complete) { setMessage('For a receipt, fill in the shop, receipt number, date, customer and valid measurements for every row. Rates and payments must be zero or more.'); return; }
@@ -144,7 +144,7 @@ export default function TimberReceipt({ userId = 'local', initialReceipt }) {
       <div className="result"><span>Total CFT {totals.volumes.some(volume => volume === null) ? '(incomplete measurements)' : ''}</span><strong>{decimal(totals.cft)}</strong></div>
       <div className="result"><span>Wood amount {totals.volumes.some(volume => volume === null) ? '(incomplete measurements)' : ''}</span><strong>{totals.valid ? money(totals.woodValue) : '-'}</strong></div>
       <details className="timber-billing"><summary>Need a receipt? Add names and billing details</summary>
-      <div className="form"><h2>Receipt details</h2><div className="two">{fields.map(([field, label]) => <label key={field}>{label}<input type={field === 'date' ? 'date' : field === 'mobile' ? 'tel' : 'text'} maxLength={field === 'mobile' ? 20 : 160} value={receipt[field]} onChange={event => set(field, event.target.value)} /></label>)}</div></div>
+      <div className="form"><h2>Receipt details</h2><div className="two">{fields.map(([field, label]) => <label key={field}>{label}<input type={field === 'date' ? 'date' : field === 'mobile' || field === 'customerMobile' ? 'tel' : 'text'} maxLength={field === 'mobile' || field === 'customerMobile' ? 20 : 160} value={receipt[field]} onChange={event => set(field, event.target.value)} /></label>)}</div></div>
       <div className="form two"><label>Amount paid (₹)<input type="number" inputMode="decimal" min="0" step="0.01" value={receipt.advance} onChange={event => set('advance', event.target.value)} /></label><label>Sawing / cutting labour (₹)<input type="number" inputMode="decimal" min="0" step="0.01" value={receipt.labour} onChange={event => set('labour', event.target.value)} /></label><label>Transport (₹)<input type="number" inputMode="decimal" min="0" step="0.01" value={receipt.transport} onChange={event => set('transport', event.target.value)} /></label></div>
       <button className="secondary" type="button" onClick={saveSettings}>Save shop details and rate</button>
       <p className="hint">Saved shop details and this rate fill new receipts on this browser only. Clearing site data removes them.</p>
@@ -169,7 +169,7 @@ export default function TimberReceipt({ userId = 'local', initialReceipt }) {
     <article className="timber-receipt receipt-preview" aria-label="Receipt preview">
       <div className="receipt-heading"><p>Shri Vishwakarma Namah</p><h2>{receipt.shop || 'Shop / sawmill name'}</h2><p>{receipt.shopAddress || 'Shop address'}</p>{receipt.mobile && <p>Mobile: {receipt.mobile}</p>}<h3>Timber receipt</h3></div>
       <div className="receipt-meta"><span>Receipt no.: {receipt.number || '-'}</span><span>Date: {receipt.date ? receipt.date.split('-').reverse().join('/') : '-'}</span></div>
-      <p>Customer name: {receipt.customer || '-'}</p><p>Address / village: {receipt.village || '-'}</p>
+      <p>Customer name: {receipt.customer || '-'}</p>{receipt.customerMobile && <p>Customer mobile: {receipt.customerMobile}</p>}<p>Address / village: {receipt.village || '-'}</p>
       <table><thead><tr><th scope="col">No.</th><th scope="col">Wood type</th><th scope="col">Length<br />(ft)</th><th scope="col">Girth<br />(in)</th><th scope="col">CFT</th><th scope="col">Rate<br />(₹/CFT)</th><th scope="col">Amount<br />(₹)</th></tr></thead><tbody>{receipt.rows.map((row, index) => <tr key={row.id}><td>{index + 1}</td><td>{row.wood || '-'}</td><td>{row.length || '-'}</td><td>{row.girth || '-'}</td><td>{totals.volumes[index] === null ? '-' : decimal(totals.volumes[index])}</td><td>{row.rate === '' || !Number.isFinite(Number(row.rate)) || Number(row.rate) < 0 ? '-' : Number(row.rate).toLocaleString('en-IN')}</td><td>{totals.volumes[index] !== null && Number.isFinite(totals.amounts[index]) && row.rate !== '' && Number(row.rate) >= 0 ? totals.amounts[index].toLocaleString('en-IN', {minimumFractionDigits:2,maximumFractionDigits:2}) : '-'}</td></tr>)}</tbody></table>
       <div className="receipt-summary"><p><span>Total pieces</span><b>{receipt.rows.length}</b></p><p><span>Total CFT{totals.volumes.some(volume => volume === null) ? ' (incomplete)' : ''}</span><b>{decimal(totals.cft)}</b></p><p><span>Wood value</span><b>{totals.valid ? money(totals.woodValue) : '-'}</b></p><p><span>Sawing / cutting labour</span><b>{totals.valid ? money(totals.labour) : '-'}</b></p><p><span>Transport</span><b>{totals.valid ? money(totals.transport) : '-'}</b></p><p><span>Grand total</span><b>{totals.valid ? money(totals.total) : '-'}</b></p><p><span>Amount paid</span><b>{totals.valid ? money(totals.advance) : '-'}</b></p><p><span>{totals.balance < 0 ? 'Overpayment (refund)' : 'Balance due'}</span><b>{totals.valid ? money(Math.abs(totals.balance)) : '-'}</b></p></div>
       <p className="receipt-method">CFT = length (ft) × girth (in)² ÷ 2304. Each wood amount uses unrounded CFT and is rounded to paise before adding. Displayed CFT uses 4 decimals; money uses 2.</p>
