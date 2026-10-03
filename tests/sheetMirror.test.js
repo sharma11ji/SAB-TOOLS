@@ -36,10 +36,10 @@ test('invalid receipt is never transmitted', async () => {
 });
 test('mirror stays after awaited save and excludes local-only saves', () => {
   const source=readFileSync(new URL('../src/TimberReceipt.jsx',import.meta.url),'utf8');
-  assert.match(source,/await storeReceipt\(userId, record\)/);
+  assert.match(source,/await storeReceipt\(userId, record, revision.current\)/);
   assert.match(source,/if \(userId !== 'local' && db\)/);
   assert.match(source,/if \(ownerRegister\) void mirrorReceipt/);
-  assert.ok(source.indexOf('await storeReceipt(userId, record)') < source.indexOf('void mirrorReceipt(record'));
+  assert.ok(source.indexOf('await storeReceipt(userId, record, revision.current)') < source.indexOf('void mirrorReceipt(record'));
 });
 
 test('owner binding fails closed, including previously enabled non-owner flags', async () => {
