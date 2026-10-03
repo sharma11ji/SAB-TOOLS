@@ -9,20 +9,32 @@ import AccountMenu from "./AccountMenu";
 import {SavedReceipts, LevelTool} from "./ReceiptTools";
 import {email} from "./validation";
 
+const MIN_SPLASH_MS=1500;
+function Splash({ready}){
+ const [minDone,setMinDone]=useState(false),[gone,setGone]=useState(false);
+ useEffect(()=>{const t=setTimeout(()=>setMinDone(true),MIN_SPLASH_MS);return()=>clearTimeout(t)},[]);
+ const fade=ready&&minDone;
+ useEffect(()=>{if(!fade)return;const t=setTimeout(()=>setGone(true),500);return()=>clearTimeout(t)},[fade]);
+ if(gone)return null;
+ const base=import.meta.env.BASE_URL;
+ return <div className={"splash-overlay"+(fade?" fade":"")} role="status" aria-label="Loading"><img className="splash-logo" src={base+"icons/1-timber-logo.png"} alt="" width="104" height="104"/><div className="splash-bar"><i/></div><small className="splash-text">Loading...</small></div>;
+}
+
 export default function App(){
  const [user,setUser]=useState(null),[loading,setLoading]=useState(true),[authMode,setAuthMode]=useState("login"),[tab,setTab]=useState("Home"),[online,setOnline]=useState(navigator.onLine),[openedReceipt,setOpenedReceipt]=useState(null);
  useEffect(()=>{initAuthPersistence().catch(()=>{});return watchAuth(u=>{setOpenedReceipt(null);setTab("Home");setUser(u);setLoading(false)})},[]);
  useEffect(()=>{const update=()=>setOnline(navigator.onLine);addEventListener("online",update);addEventListener("offline",update);return()=>{removeEventListener("online",update);removeEventListener("offline",update)}},[]);
- if(loading)return <div className="splash"><b>SAB TOOLS</b><span>Checking secure session...</span></div>;
- if(!user&&firebaseReady)return <AuthScreen mode={authMode} setMode={setAuthMode} online={online}/>;
- return <div className="app"><header><div><img className="brand-logo" src={`${import.meta.env.BASE_URL}icons/1-timber-logo.png`} alt="SAB TOOLS" width="40" height="40"/><div className="tag">Timber CFT and receipts</div></div><div className="headerRight"><span className={"status "+(online?"on":"off")}>{online?"Online":"Offline"}</span>{user&&<div aria-label="Signed-in account"><AccountMenu key={user.uid} user={user} onLogout={logout}/></div>}</div></header><main>
+ const splash=<Splash ready={!loading}/>;
+ if(loading)return <>{splash}{null}</>;
+ if(!user&&firebaseReady)return <>{splash}<AuthScreen mode={authMode} setMode={setAuthMode} online={online}/></>;
+ return <>{splash}<div className="app"><header><div><img className="brand-logo" src={`${import.meta.env.BASE_URL}icons/1-timber-logo.png`} alt="SAB TOOLS" width="40" height="40"/><div className="tag">Timber CFT and receipts</div></div><div className="headerRight"><span className={"status "+(online?"on":"off")}>{online?"Online":"Offline"}</span>{user&&<div aria-label="Signed-in account"><AccountMenu key={user.uid} user={user} onLogout={logout}/></div>}</div></header><main>
  {!firebaseReady&&<p className="hint local-mode-banner">Local mode: Firebase is unavailable. You can create and save receipts on this device.</p>}
  <div hidden={tab!=="Home"}><h1>Your tools</h1><div className="grid"><button className="card" onClick={()=>setTab("Receipt")}><b>Timber receipt / CFT</b><span>Wood measurements and billing</span><small>2304 formula · Receipts · Print / PDF</small></button><button className="card" onClick={()=>setTab("Saved")}><b>Saved receipts</b><span>Open your past receipts</span></button><button className="card" onClick={()=>setTab("Baki")}><b>Baki hisab</b><span>Pending payments and money received</span></button><button className="card" onClick={()=>setTab("Customers")}><b>Customer list</b><span>All customers, their work and pending amount</span></button><button className="card" onClick={()=>setTab("Report")}><b>Sale report</b><span>Business, money received and baki by period</span></button><button className="card" onClick={()=>setTab("Level")}><b>Bubble level</b><span>Check surface tilt with your phone</span></button></div></div>
  <div hidden={tab!=="Receipt"}><TimberReceipt key={user?.uid||"local"} userId={user?.uid||"local"} initialReceipt={openedReceipt?.uid===(user?.uid||"local")?openedReceipt.receipt:null}/></div>
  <div hidden={tab!=="Baki"}><BakiHisab key={user?.uid||"local"} userId={user?.uid||"local"} active={tab==="Baki"}/></div>
  <div hidden={tab!=="Customers"}><CustomerList key={user?.uid||"local"} userId={user?.uid||"local"} active={tab==="Customers"}/></div>
  <div hidden={tab!=="Report"}><SaleReport key={user?.uid||"local"} userId={user?.uid||"local"} active={tab==="Report"}/></div>
- <div hidden={tab!=="Saved"}><SavedReceipts key={user?.uid||"local"} userId={user?.uid||"local"} active={tab==="Saved"} onOpen={receipt=>{if(!confirm("Open this saved receipt? Current unsaved entries will be replaced."))return;setOpenedReceipt({uid:user?.uid||"local",receipt:{...receipt}});setTab("Receipt")}}/></div><div hidden={tab!=="Level"}><LevelTool active={tab==="Level"}/></div></main><nav style={{gridTemplateColumns:"repeat(7,1fr)"}}><button className={tab==="Home"?"active":""} onClick={()=>setTab("Home")}>Home</button><button className={tab==="Receipt"?"active":""} onClick={()=>setTab("Receipt")}>Receipt</button><button className={tab==="Saved"?"active":""} onClick={()=>setTab("Saved")}>Saved</button><button className={tab==="Baki"?"active":""} onClick={()=>setTab("Baki")}>Baki hisab</button><button className={tab==="Customers"?"active":""} onClick={()=>setTab("Customers")}>Customers</button><button className={tab==="Report"?"active":""} onClick={()=>setTab("Report")}>Report</button><button className={tab==="Level"?"active":""} onClick={()=>setTab("Level")}>Level</button></nav></div>;
+ <div hidden={tab!=="Saved"}><SavedReceipts key={user?.uid||"local"} userId={user?.uid||"local"} active={tab==="Saved"} onOpen={receipt=>{if(!confirm("Open this saved receipt? Current unsaved entries will be replaced."))return;setOpenedReceipt({uid:user?.uid||"local",receipt:{...receipt}});setTab("Receipt")}}/></div><div hidden={tab!=="Level"}><LevelTool active={tab==="Level"}/></div></main><nav style={{gridTemplateColumns:"repeat(7,1fr)"}}><button className={tab==="Home"?"active":""} onClick={()=>setTab("Home")}>Home</button><button className={tab==="Receipt"?"active":""} onClick={()=>setTab("Receipt")}>Receipt</button><button className={tab==="Saved"?"active":""} onClick={()=>setTab("Saved")}>Saved</button><button className={tab==="Baki"?"active":""} onClick={()=>setTab("Baki")}>Baki hisab</button><button className={tab==="Customers"?"active":""} onClick={()=>setTab("Customers")}>Customers</button><button className={tab==="Report"?"active":""} onClick={()=>setTab("Report")}>Report</button><button className={tab==="Level"?"active":""} onClick={()=>setTab("Level")}>Level</button></nav></div></>;
 }
 
 function AuthScreen({mode,setMode,online}){
