@@ -7,6 +7,8 @@ import {FORM_ENDPOINT, mirrorReceipt, isRegisterOwner} from './sheetMirror';
 import PersonalSheetSetup from './PersonalSheetSetup';
 import {queuePersonalReceipt} from './personalSheet';
 import {db} from './firebase';
+import PaymentDialog from './PaymentDialog';
+import {paymentOnSave} from './paymentLedger';
 
 const localDate = () => {
   const date = new Date();
@@ -35,6 +37,8 @@ export default function TimberReceipt({ userId = 'local', initialReceipt }) {
   const [receipt, setReceipt] = useState(() => receiptWithSettings(userId));
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
+  const [paymentPrompt,setPaymentPrompt]=useState(null),[paymentChoice,setPaymentChoice]=useState(''),[paidNow,setPaidNow]=useState('0'),[paymentError,setPaymentError]=useState('');
+  const revision=useRef(0);
   const ownerRegister = isRegisterOwner(userId);
   const mirrorSettingsKey = `sab-tools-form-enabled-v1:${userId}:${FORM_ENDPOINT}`;
   const [sheetEnabled, setSheetEnabled] = useState(() => { try { return ownerRegister && localStorage.getItem(mirrorSettingsKey) === 'yes'; } catch { return false; } });
@@ -52,6 +56,7 @@ export default function TimberReceipt({ userId = 'local', initialReceipt }) {
   useEffect(() => {
     if (!initialReceipt || !validReceipt(initialReceipt)) return;
     setReceipt({...initialReceipt, rows: initialReceipt.rows.map(row => ({...row, id: crypto.randomUUID()}))});
+    revision.current = initialReceipt.revision || 0;
     recordId.current = initialReceipt.id || crypto.randomUUID();
     setMessage('Saved receipt opened. Saving again updates this receipt.');
   }, [initialReceipt]);
@@ -63,15 +68,24 @@ export default function TimberReceipt({ userId = 'local', initialReceipt }) {
   const complete = totals.valid && receipt.shop.trim() && receipt.number.trim() && receipt.customer.trim() && receipt.date;
   const print = async () => {
     if (!complete) { setMessage('For a receipt, fill in the shop, receipt number, date, customer and valid measurements for every row. Rates and payments must be zero or more.'); return; }
-    if (await saveCloud()) window.print();
+    requestSave(true);
   };
-  const saveCloud = async () => {
+  const requestSave = (printAfter=false) => {
+    if (!complete) {setMessage('Complete the shop, receipt number, date, customer and valid measurements first.'); return;}
+    setPaidNow(receipt.advance);setPaymentChoice('');setPaymentError('');setPaymentPrompt({printAfter});
+  };
+  const confirmSave = async () => {
+    try {const next=paymentOnSave(receipt,paymentChoice,paidNow);if(await saveCloud(next)){setReceipt(next);const printAfter=paymentPrompt.printAfter;setPaymentPrompt(null);if(printAfter)requestAnimationFrame(()=>window.print());}}
+    catch(error){setPaymentError(error.message);}
+  };
+  const saveCloud = async (nextReceipt) => {
     if (saving.current) return false;
     if (!complete) {setMessage('Complete the shop, receipt number, date, customer and valid measurements first.'); return false;}
     saving.current = true; setBusy(true);
     try {
-      const record = receiptRecord(receipt, recordId.current);
-      setMessage(await storeReceipt(userId, record));
+      const record = receiptRecord(nextReceipt, recordId.current);
+      setMessage(await storeReceipt(userId, record, revision.current));
+      revision.current += 1;
       if (userId !== 'local' && db) {
         if (ownerRegister) void mirrorReceipt(record, {enabled: sheetConsent.current, uid: userId});
         else {
@@ -84,7 +98,7 @@ export default function TimberReceipt({ userId = 'local', initialReceipt }) {
       }
       return true;
     }
-    catch (error) {setMessage(`Receipt was not saved: ${error.message} You can still save a local draft. Printing has not started.`); return false;}
+    catch (error) {setPaymentError(error.message);setMessage(`Receipt was not saved: ${error.message} You can still save a local draft. Printing has not started.`); return false;}
     finally {saving.current = false; setBusy(false);}
   };
   const save = () => {
@@ -105,7 +119,7 @@ export default function TimberReceipt({ userId = 'local', initialReceipt }) {
       if (!value) { setMessage('No saved draft was found in this browser.'); return; }
       if (!Array.isArray(value.rows) || !value.rows.length || value.rows.length > 500 || !fields.every(([field]) => typeof value[field] === 'string') || typeof value.rate !== 'string' || typeof value.advance !== 'string' || typeof value.labour !== 'string' || typeof value.transport !== 'string' || !value.rows.every(row => ['wood', 'length', 'girth', 'rate'].every(field => typeof row[field] === 'string'))) throw new Error('Invalid draft');
       if (!confirm('Replace current entries with the saved draft?')) return;
-      recordId.current = crypto.randomUUID();
+      recordId.current = crypto.randomUUID(); revision.current = 0;
       setReceipt({ ...value, rows: value.rows.map(row => ({ ...row, id: crypto.randomUUID() })) });
       setMessage('Saved draft opened.');
     } catch { setMessage('Saved draft could not be opened.'); }
@@ -146,9 +160,10 @@ export default function TimberReceipt({ userId = 'local', initialReceipt }) {
         </>}
         {sheetSettingsMessage && <p role="status">{sheetSettingsMessage}</p>}
       </details> : userId !== 'local' && db ? <PersonalSheetSetup userId={userId} message={sheetSettingsMessage} onMessage={setSheetSettingsMessage}/> : <p className="hint">Sign in with Google to connect a personal register. Local drafts are not sent.</p>}
-      <div className="receipt-actions"><button className="primary" type="button" disabled={busy} onClick={print}>Save PDF / print</button><button className="secondary" type="button" disabled={busy} onClick={saveCloud}>{busy ? 'Saving...' : 'Save receipt'}</button><button className="secondary" type="button" onClick={save}>Save draft</button><button className="secondary" type="button" onClick={load}>Open draft</button><button className="secondary" type="button" onClick={() => { if (confirm('Start a new receipt? Current entries will be cleared. Your saved draft and receipts will remain.')) { setReceipt(receiptWithSettings(userId)); recordId.current = crypto.randomUUID(); setMessage(''); } }}>New receipt</button></div>
+      <div className="receipt-actions"><button className="primary" type="button" disabled={busy} onClick={print}>Save PDF / print</button><button className="secondary" type="button" disabled={busy} onClick={()=>requestSave(false)}>{busy ? 'Saving...' : 'Save receipt'}</button><button className="secondary" type="button" onClick={save}>Save draft</button><button className="secondary" type="button" onClick={load}>Open draft</button><button className="secondary" type="button" onClick={() => { if (confirm('Start a new receipt? Current entries will be cleared. Your saved draft and receipts will remain.')) { setReceipt(receiptWithSettings(userId)); recordId.current = crypto.randomUUID(); revision.current = 0; setMessage(''); } }}>New receipt</button></div>
       <p className="hint">Save receipt stores the complete receipt in your cloud account, or on this browser in local mode. PDF saves the receipt first, then opens the browser print menu. Choose "Save as PDF" if available. Drafts stay on this device only.</p>
       {message && <div className="notice" role="status">{message}</div>}
+      {paymentPrompt&&<PaymentDialog title="Has payment been received?" busy={busy} onClose={()=>setPaymentPrompt(null)}><p><b>{receipt.customer}</b> · Receipt #{receipt.number}</p><div className="payment-summary"><span>Receipt total</span><strong>{money(totals.total)}</strong></div><div className="payment-choices"><button className="secondary" aria-pressed={paymentChoice==='paid'} onClick={()=>setPaymentChoice('paid')}>Paid in full</button><button className="secondary" aria-pressed={paymentChoice==='pending'} onClick={()=>setPaymentChoice('pending')}>Pending</button></div>{paymentChoice==='paid'&&<p className="hint">The full total is marked received. No pending balance.</p>}{paymentChoice==='pending'&&<><label className="payment-input">Already paid (₹)<input type="number" inputMode="decimal" min="0" step="0.01" value={paidNow} onChange={event=>setPaidNow(event.target.value)}/></label><p className="hint">Use 0 if nothing has been paid. The rest goes to Baki hisab.</p><p>Pending: <b>{money(Math.max(0,totals.total-Number(paidNow||0)))}</b></p></>}{paymentError&&<p className="error" role="alert">{paymentError}</p>}<button className="primary wide" disabled={busy||!paymentChoice} onClick={confirmSave}>{busy?'Saving...':paymentPrompt.printAfter?'Save and print':'Save receipt'}</button></PaymentDialog>}
       <h2>Receipt preview</h2>
     </div>
     <article className="timber-receipt receipt-preview" aria-label="Receipt preview">

@@ -1,22 +1,10 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {doc, serverTimestamp, setDoc} from 'firebase/firestore';
 import {db} from './firebase';
 import {watchRecords} from './services/firestoreService';
 import {receiptKey, sortReceipts} from './receiptRecords';
 import {motionTilt} from './levelMath';
 
-export async function storeReceipt(uid, record) {
-  if (uid === 'local' || !db) {
-    const old = JSON.parse(localStorage.getItem(receiptKey(uid)) || '[]');
-    localStorage.setItem(receiptKey(uid), JSON.stringify([record, ...old.filter(item => item.id !== record.id)]));
-    return 'Receipt saved on this device only. This is not a cloud backup.';
-  }
-  if (!navigator.onLine) throw new Error('You are offline. Save a draft and try cloud saving when online.');
-  const {id, ...data} = record;
-  // Use the existing user-owned history collection: current rules already cover it.
-  await setDoc(doc(db, 'users', uid, 'history', id), {...data, createdAt: serverTimestamp(), updatedAt: serverTimestamp()});
-  return 'Receipt saved to your cloud account.';
-}
+export {storeReceipt} from './receiptStorage';
 export function SavedReceipts({userId, onOpen, active}) {
   const [receipts, setReceipts] = useState([]), [error, setError] = useState(''), [loading, setLoading] = useState(true);
   useEffect(() => {
