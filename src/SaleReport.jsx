@@ -24,7 +24,7 @@ export default function SaleReport({userId, active}) {
  const custom=period==='custom',range=custom?{from,to}:periodRange(period),badRange=custom&&from&&to&&from>to;
  const report=buildReport(records,badRange?{from:'9999',to:'0000'}:range);
  const shownRange=custom?(from||to?`${from?label(from):'start'} to ${to?label(to):'today'}`:'All dates'):range.from===range.to?label(range.from):`${label(range.from)} to ${label(range.to)}`;
- return <section className="report-tool"><h1>Sale report</h1><p className="hint">Made automatically from your saved receipts.</p>{userId==='local'&&<p className="hint">On this device only. Sign in for your private cloud record.</p>}
+ return <section className="report-tool"><h1>Sale report</h1>{userId==='local'&&<p className="hint">On this device only. Sign in for your private cloud record.</p>}
  <div className="tabs report-tabs" aria-label="Report period">{Object.keys(NAMES).map(k=><button key={k} aria-pressed={period===k} onClick={()=>setPeriod(k)}>{NAMES[k]}</button>)}</div>
  {custom&&<div className="report-dates"><label className="payment-input">From<input type="date" value={from} max={to||isoDate(new Date())} onChange={e=>setFrom(e.target.value)}/></label><label className="payment-input">To<input type="date" value={to} min={from} onChange={e=>setTo(e.target.value)}/></label></div>}
  {badRange&&<p className="error" role="alert">"From" date is after "To" date.</p>}

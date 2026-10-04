@@ -33,7 +33,7 @@ export default function BakiHisab({userId,active}) {
   catch(error){setDialogError(error.message);}
   finally{saving.current=false;setBusy(false);}
  };
- return <section className="baki-tool"><h1>Baki hisab</h1><p className="hint">Pending payments from your saved receipts.</p>{userId==='local'&&<p className="hint">On this device only. Sign in for your private cloud record.</p>}
+ return <section className="baki-tool"><h1>Baki hisab</h1>{userId==='local'&&<p className="hint">On this device only. Sign in for your private cloud record.</p>}
  <div className="result baki-total"><span>Total pending · {pending.length} {pending.length===1?'receipt':'receipts'}</span><strong>{money(pending.reduce((sum,item)=>sum+item.state.balance,0))}</strong></div>
  <div className="tabs" aria-label="Payment lists"><button aria-pressed={!history} onClick={()=>setHistory(false)}>Pending ({pending.length})</button><button aria-pressed={history} onClick={()=>setHistory(true)}>Paid ({paid.length})</button></div>
  {loading&&<p role="status">Loading receipts...</p>}{error&&<p className="error" role="alert">{error}</p>}{message&&<p className="success" role="status">{message}</p>}{invalid.length>0&&<p className="error">{invalid.length} receipts have invalid amounts and are excluded. Check them in Saved receipts.</p>}

@@ -126,9 +126,6 @@ export default function TimberReceipt({ userId = 'local', initialReceipt }) {
   };
   return <section className="timber-tool" lang="en">
     <div className="receipt-editor">
-      <h1>Timber CFT and receipt</h1>
-      <p>Enter length, girth and one rate per CFT. Each wood amount and the total update automatically. Tap "+ Add wood" for the next piece.</p>
-      <p className="hint">Length is in feet (ft), girth in inches (in). Girth is the circumference, not the diameter.</p>
 
       <h2>Wood measurements</h2>
       <div className="form timber-rate"><label>Rate for all wood (₹ / CFT)<input aria-label="Rate for all wood (₹ / CFT)" type="number" inputMode="decimal" min="0" step="0.01" placeholder="e.g. 50 or 55" value={receipt.rate} onChange={event => { const rate = event.target.value; setReceipt(old => ({ ...old, rate, rows: old.rows.map(row => ({ ...row, rate })) })); setMessage(''); }} /></label><p className="hint">Enter the rate once. Amount = each wood's CFT × this rate.</p></div>
