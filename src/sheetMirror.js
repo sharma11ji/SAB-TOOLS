@@ -26,14 +26,14 @@ export const FORM_ENTRIES = Object.freeze({
 // One receipt per response. Multiple wood names stay in one Item cell.
 const cell = value => String(value ?? '').replace(/[\t\r\n]/g, ' ');
 export function receiptFields(record) {
-  const totals = receiptTotals(record.rows, record.rate, record.advance, record.labour, record.transport);
+  const totals = receiptTotals(record.rows, record.rate, record.advance, record.labour, record.transport, record.unit);
   if (!totals.valid || !record.id) throw new Error('Invalid receipt');
   const rates = record.rows.map(row => Number(row.rate ?? record.rate));
   const items = [...new Set(record.rows.map(row => cell(row.wood).trim()).filter(Boolean))];
   return Object.fromEntries(Object.entries({
     date: record.date, number: record.number, customer: record.customer, village: record.village,
-    item: items.join(', '), cft: totals.cft.toFixed(4),
-    rate: rates.every(rate => rate === rates[0]) ? rates[0] : 'Mixed',
+    item: items.join(', '), cft: totals.unit === 'CBM' ? `${totals.volume.toFixed(4)} CBM` : totals.cft.toFixed(4),
+    rate: rates.every(rate => rate === rates[0]) ? (totals.unit === 'CBM' ? `${rates[0]} /CBM` : rates[0]) : 'Mixed',
     total: totals.total.toFixed(2), paid: totals.advance.toFixed(2), balance: totals.balance.toFixed(2),
     labour: totals.labour.toFixed(2), transport: totals.transport.toFixed(2),
   }).map(([key, value]) => [FORM_ENTRIES[key], cell(value)]));

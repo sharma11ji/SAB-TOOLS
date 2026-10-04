@@ -1,7 +1,7 @@
 import {receiptTotals} from './timberReceipt.js';
 export const money = value => Number(value).toLocaleString('en-IN', {style:'currency', currency:'INR'});
 export function paymentState(receipt) {
- const totals = receiptTotals(receipt.rows, receipt.rate, receipt.advance, receipt.labour, receipt.transport);
+ const totals = receiptTotals(receipt.rows, receipt.rate, receipt.advance, receipt.labour, receipt.transport, receipt.unit);
  if (!totals.valid) throw new Error('This receipt has invalid amounts. Open it and check the billing details.');
  return {total:totals.total, paid:totals.advance, balance:Math.max(0, totals.balance), status:totals.balance > 0 ? 'pending' : 'paid'};
 }
