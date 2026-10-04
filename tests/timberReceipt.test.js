@@ -42,3 +42,22 @@ test('one rate applied to every wood updates amounts at 50 and 55', () => {
   assert.equal(result.total, rate === '50' ? 168.5 : 185.35);
  }
 });
+test('CBM unit converts volume at 35.3147 CFT per CBM and rates apply per CBM', () => {
+  const rows = [{length:1,girth:48}];
+  const cftResult = receiptTotals(rows, '100', '0');
+  const cbm = receiptTotals(rows, '3531.47', '0', '0', '0', 'CBM');
+  assert.equal(cbm.unit, 'CBM');
+  assert.ok(Math.abs(cbm.volume - 1 / 35.3147) < 1e-12);
+  assert.equal(cbm.cft, 1);
+  assert.equal(cbm.total, 100);
+  assert.equal(cftResult.unit, 'CFT');
+  assert.equal(cftResult.volume, 1);
+  assert.equal(cftResult.total, 100);
+});
+test('missing or unknown unit behaves as CFT so old receipts are unchanged', () => {
+  const rows = [{length:7,girth:38}];
+  const a = receiptTotals(rows, '50', '0');
+  const b = receiptTotals(rows, '50', '0', '0', '0', 'bogus');
+  assert.deepEqual(a, b);
+  assert.equal(a.unit, 'CFT');
+});
