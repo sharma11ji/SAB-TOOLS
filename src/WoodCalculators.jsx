@@ -1,12 +1,16 @@
 import React,{useState} from 'react';
 import {woodCalculation} from './woodCalculations';
 import './woodCalculators.css';
+import RoundWood from './RoundWood';
 const types = {round:{title:'Round wood',art:'logs'},size:{title:'Size wood',art:'planks'},door:{title:'Flush door',art:'door'}};
 const image = kind => `${import.meta.env.BASE_URL}icons/wood-${types[kind].art}.svg`;
 export function WoodHome({onSelect,onCalculator}) {
- return <section className="wood-home"><h1>Your tools</h1><button className="wood-receipt" onClick={()=>onSelect('Receipt')}><span aria-hidden="true">▤</span><b>Timber receipt / CFT &amp; CBM</b><span aria-hidden="true">→</span></button><div className="wood-grid">{[['round','imperial'],['size','imperial'],['round','metric'],['size','metric'],['door','imperial'],['door','metric']].map(([kind,system])=><button key={kind+system} className={'wood-card '+system} onClick={()=>kind==='round'&&system==='imperial'?onSelect('Receipt'):onCalculator(kind,system)} aria-label={`${types[kind].title}, ${system==='metric'?'Meter, centimetre':'Foot, Inch'}`}><span className="wood-unit">{system==='metric'?'Meter, c.m.':'Foot, Inch'}</span><span className="wood-dimension" aria-hidden="true">{system==='metric'?'M':'F'}<sup>{kind==='door'?'2':'3'}</sup></span><img src={image(kind)} alt=""/><b>{types[kind].title}</b></button>)}</div><div className="wood-business"><span>Your business</span><div>{[['Saved','Saved receipts'],['Baki','Baki hisab'],['Customers','Customer list'],['Report','Sale report'],['Level','Bubble level']].map(([id,label])=><button key={id} onClick={()=>onSelect(id)}>{label}</button>)}</div></div></section>;
+ return <section className="wood-home"><h1>Your tools</h1><button className="wood-receipt" onClick={()=>onSelect('Receipt')}><span aria-hidden="true">▤</span><b>Timber receipt / CFT &amp; CBM</b><span aria-hidden="true">→</span></button><div className="wood-grid">{[['round','imperial'],['size','imperial'],['round','metric'],['size','metric'],['door','imperial'],['door','metric']].map(([kind,system])=><button key={kind+system} className={'wood-card '+system} onClick={()=>onCalculator(kind,system)} aria-label={`${types[kind].title}, ${system==='metric'?'Meter, centimetre':'Foot, Inch'}`}><span className="wood-unit">{system==='metric'?'Meter, c.m.':'Foot, Inch'}</span><span className="wood-dimension" aria-hidden="true">{system==='metric'?'M':'F'}<sup>{kind==='door'?'2':'3'}</sup></span><img src={image(kind)} alt=""/><b>{types[kind].title}</b></button>)}</div><div className="wood-business"><span>Your business</span><div>{[['Saved','Saved receipts'],['Baki','Baki hisab'],['Customers','Customer list'],['Report','Sale report'],['Level','Bubble level']].map(([id,label])=><button key={id} onClick={()=>onSelect(id)}>{label}</button>)}</div></div></section>;
 }
-export default function WoodCalculator({kind,initialSystem,onBack,onReceipt}) {
+export default function WoodCalculator(props) {
+ return props.kind==='round'?<RoundWood system={props.initialSystem} onBack={props.onBack}/>:<SingleWoodCalculator {...props}/>;
+}
+function SingleWoodCalculator({kind,initialSystem,onBack,onReceipt}) {
  const [system,setSystem]=useState(initialSystem),[fields,setFields]=useState({length:'',width:'',thickness:'',girth:'',pieces:'1',rate:''}),[attempted,setAttempted]=useState(false);
  const metric=system==='metric',door=kind==='door',result=woodCalculation(kind,system,fields);
  const unit=door?(metric?'sq m':'sq ft'):(metric?'CBM':'CFT');
