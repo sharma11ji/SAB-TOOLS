@@ -23,7 +23,7 @@ export default function CustomerList({userId, active}) {
  },[userId,active]);
  const {customers,invalid}=buildCustomers(records),shown=filterCustomers(customers,query);
  const business=customers.reduce((sum,c)=>sum+c.total,0),pending=customers.reduce((sum,c)=>sum+c.pending,0);
- return <section className="customer-tool"><h1>Customer list</h1><p className="hint">Made automatically from your saved receipts.</p>{userId==='local'&&<p className="hint">On this device only. Sign in for your private cloud record.</p>}
+ return <section className="customer-tool"><h1>Customer list</h1>{userId==='local'&&<p className="hint">On this device only. Sign in for your private cloud record.</p>}
  <div className="result baki-total"><span>{customers.length} {customers.length===1?'customer':'customers'} · Total business</span><strong>{money(business)}</strong><span className="customer-pending">Pending: {money(pending)}</span></div>
  <label className="payment-input">Search customer<input type="search" placeholder="Name, village or phone" value={query} onChange={e=>setQuery(e.target.value)}/></label>
  {loading&&<p role="status">Loading receipts...</p>}{error&&<p className="error" role="alert">{error}</p>}{invalid.length>0&&<p className="error">{invalid.length} receipts have invalid amounts and are not counted. Check them in Saved receipts.</p>}
@@ -33,5 +33,5 @@ export default function CustomerList({userId, active}) {
  <p className="hint">{c.phone?(callable(c.phone)?<a className="customer-phone" href={`tel:${c.phone.replace(/[^\d+]/g,'')}`}>Phone: {c.phone}</a>:<span>Phone: {c.phone}</span>):'Phone not added'}</p>
  <div className="customer-stats"><span>Receipts<b>{c.receipts.length}</b></span><span>Total business<b>{money(c.total)}</b></span><span>Last receipt<b>{shortDate(c.lastDate)}</b></span></div>
  {isOpen&&<ul className="customer-receipts">{c.receipts.map(({receipt,state})=><li key={receipt.id}><span>#{receipt.number} · {dateLabel(receipt.date)}</span><span>{money(state.total)}{state.balance>0&&<em> · due {money(state.balance)}</em>}</span></li>)}</ul>}</article>;})}</div>
- <p className="hint">Same name and village count as one customer. Add the customer mobile on the receipt form to see it here.</p></section>;
+ </section>;
 }
