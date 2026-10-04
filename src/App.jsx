@@ -8,6 +8,7 @@ import SaleReport from "./SaleReport";
 import AccountMenu from "./AccountMenu";
 import {SavedReceipts, LevelTool} from "./ReceiptTools";
 import {email} from "./validation";
+import WoodCalculator,{WoodHome} from "./WoodCalculators";
 
 const MIN_SPLASH_MS=1500;
 function Splash({ready}){
@@ -21,15 +22,18 @@ function Splash({ready}){
 }
 
 export default function App(){
+ const [calculator,setCalculator]=useState({kind:"size",system:"imperial"});
+ const openCalculator=(kind,system)=>{setCalculator({kind,system});setTab("Wood");window.scrollTo(0,0)};
  const [user,setUser]=useState(null),[loading,setLoading]=useState(true),[authMode,setAuthMode]=useState("login"),[tab,setTab]=useState("Home"),[online,setOnline]=useState(navigator.onLine),[openedReceipt,setOpenedReceipt]=useState(null);
  useEffect(()=>{initAuthPersistence().catch(()=>{});return watchAuth(u=>{setOpenedReceipt(null);setTab("Home");setUser(u);setLoading(false)})},[]);
  useEffect(()=>{const update=()=>setOnline(navigator.onLine);addEventListener("online",update);addEventListener("offline",update);return()=>{removeEventListener("online",update);removeEventListener("offline",update)}},[]);
  const splash=<Splash ready={!loading}/>;
  if(loading)return <>{splash}{null}</>;
  if(!user&&firebaseReady)return <>{splash}<AuthScreen mode={authMode} setMode={setAuthMode} online={online}/></>;
- return <>{splash}<div className="app"><header><div><img className="brand-logo" src={`${import.meta.env.BASE_URL}icons/1-timber-logo.png`} alt="SAB TOOLS" width="40" height="40"/><div className="tag">Timber CFT and receipts</div></div><div className="headerRight"><span className={"status "+(online?"on":"off")}>{online?"Online":"Offline"}</span>{user&&<div aria-label="Signed-in account"><AccountMenu key={user.uid} user={user} onLogout={logout} items={[["Home","Home"],["Receipt","Receipt"],["Saved","Saved"],["Baki","Baki hisab"],["Customers","Customers"],["Report","Report"],["Level","Level"]]} activeItem={tab} onSelect={setTab}/></div>}</div></header><main>
+ return <>{splash}<div className="app"><header><div><img className="brand-logo" src={`${import.meta.env.BASE_URL}icons/1-timber-logo.png`} alt="SAB TOOLS" width="40" height="40"/><div className="tag">Timber CFT and receipts</div></div><div className="headerRight"><span className={"status "+(online?"on":"off")}>{online?"Online":"Offline"}</span>{user&&<div aria-label="Signed-in account"><AccountMenu key={user.uid} user={user} onLogout={logout} items={[["Home","Home"],["SizeWood","Size wood"],["FlushDoor","Flush door"],["RoundMetric","Round wood (metric)"],["Receipt","Receipt"],["Saved","Saved"],["Baki","Baki hisab"],["Customers","Customers"],["Report","Report"],["Level","Level"]]} activeItem={tab} onSelect={id=>id==="SizeWood"?openCalculator("size","imperial"):id==="FlushDoor"?openCalculator("door","imperial"):id==="RoundMetric"?openCalculator("round","metric"):setTab(id)}/></div>}</div></header><main>
  {!firebaseReady&&<p className="hint local-mode-banner">Local mode: Firebase is unavailable. You can create and save receipts on this device.</p>}
- <div hidden={tab!=="Home"}><h1>Your tools</h1><div className="grid"><button className="card" onClick={()=>setTab("Receipt")}><b>Timber receipt / CFT</b></button><button className="card" onClick={()=>setTab("Saved")}><b>Saved receipts</b></button><button className="card" onClick={()=>setTab("Baki")}><b>Baki hisab</b></button><button className="card" onClick={()=>setTab("Customers")}><b>Customer list</b></button><button className="card" onClick={()=>setTab("Report")}><b>Sale report</b></button><button className="card" onClick={()=>setTab("Level")}><b>Bubble level</b></button></div></div>
+ <div hidden={tab!=="Home"}><WoodHome onSelect={setTab} onCalculator={openCalculator}/></div>
+ {tab==="Wood"&&<WoodCalculator key={calculator.kind+calculator.system} kind={calculator.kind} initialSystem={calculator.system} onReceipt={()=>setTab("Receipt")} onBack={()=>setTab("Home")}/>}
  <div hidden={tab!=="Receipt"}><TimberReceipt key={user?.uid||"local"} userId={user?.uid||"local"} initialReceipt={openedReceipt?.uid===(user?.uid||"local")?openedReceipt.receipt:null}/></div>
  <div hidden={tab!=="Baki"}><BakiHisab key={user?.uid||"local"} userId={user?.uid||"local"} active={tab==="Baki"}/></div>
  <div hidden={tab!=="Customers"}><CustomerList key={user?.uid||"local"} userId={user?.uid||"local"} active={tab==="Customers"}/></div>
