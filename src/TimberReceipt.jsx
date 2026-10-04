@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { receiptTotals } from './timberReceipt';
+import { receiptTotals, receiptUnit } from './timberReceipt';
 import './timberReceipt.css';
 import {receiptRecord, validReceipt} from './receiptRecords';
 import {storeReceipt} from './ReceiptTools';
@@ -15,16 +15,16 @@ const localDate = () => {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 };
 const newRow = () => ({ id: crypto.randomUUID(), wood: '', length: '', girth: '', rate: '0' });
-const newReceipt = () => ({ shop: '', shopAddress: '', mobile: '', number: '1', date: localDate(), customer: '', customerMobile: '', village: '', rate: '0', advance: '0', labour: '0', transport: '0', rows: [newRow()] });
+const newReceipt = () => ({ shop: '', shopAddress: '', mobile: '', number: '1', date: localDate(), customer: '', customerMobile: '', village: '', rate: '0', unit: 'CFT', advance: '0', labour: '0', transport: '0', rows: [newRow()] });
 const decimal = value => value.toLocaleString('en-IN', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
 const money = value => value.toLocaleString('en-IN', { style: 'currency', currency: 'INR' });
 
 const settingsKey = userId => `sab-tools-timber-settings-v1:${userId}`;
-const defaultSettings = { shop: '', shopAddress: '', mobile: '', rate: '0' };
+const defaultSettings = { shop: '', shopAddress: '', mobile: '', rate: '0', unit: 'CFT' };
 const readSettings = userId => {
   try {
     const saved = JSON.parse(localStorage.getItem(settingsKey(userId)));
-    if (saved && ['shop', 'shopAddress', 'mobile', 'rate'].every(field => typeof saved[field] === 'string') && saved.rate.trim() !== '' && Number.isFinite(Number(saved.rate)) && Number(saved.rate) >= 0) return saved;
+    if (saved && ['shop', 'shopAddress', 'mobile', 'rate'].every(field => typeof saved[field] === 'string') && saved.rate.trim() !== '' && Number.isFinite(Number(saved.rate)) && Number(saved.rate) >= 0) return { ...saved, unit: receiptUnit(saved.unit) };
   } catch {}
   return defaultSettings;
 };
@@ -55,13 +55,14 @@ export default function TimberReceipt({ userId = 'local', initialReceipt }) {
   const saving = useRef(false);
   useEffect(() => {
     if (!initialReceipt || !validReceipt(initialReceipt)) return;
-    setReceipt({...initialReceipt, customerMobile: initialReceipt.customerMobile || '', rows: initialReceipt.rows.map(row => ({...row, id: crypto.randomUUID()}))});
+    setReceipt({...initialReceipt, unit: receiptUnit(initialReceipt.unit), customerMobile: initialReceipt.customerMobile || '', rows: initialReceipt.rows.map(row => ({...row, id: crypto.randomUUID()}))});
     revision.current = initialReceipt.revision || 0;
     recordId.current = initialReceipt.id || crypto.randomUUID();
     setMessage('Saved receipt opened. Saving again updates this receipt.');
   }, [initialReceipt]);
   const key = `sab-tools-timber-receipt-v1:${userId}`;
-  const totals = receiptTotals(receipt.rows, receipt.rate, receipt.advance, receipt.labour, receipt.transport);
+  const totals = receiptTotals(receipt.rows, receipt.rate, receipt.advance, receipt.labour, receipt.transport, receipt.unit);
+  const unit = totals.unit;
   const set = (field, value) => { setReceipt(old => ({ ...old, [field]: value })); setMessage(''); };
   const setRow = (id, field, value) => set('rows', receipt.rows.map(row => row.id === id ? { ...row, [field]: value } : row));
   const fields = [ ['shop', 'Shop / sawmill name'], ['shopAddress', 'Shop address'], ['mobile', 'Mobile number'], ['number', 'Receipt number'], ['date', 'Date'], ['customer', 'Customer name'], ['customerMobile', 'Customer mobile (optional)'], ['village', 'Customer address / village'] ];
@@ -108,7 +109,7 @@ export default function TimberReceipt({ userId = 'local', initialReceipt }) {
   const saveSettings = () => {
     if (receipt.rate.trim() === '' || !Number.isFinite(Number(receipt.rate)) || Number(receipt.rate) < 0) { setMessage('Enter a valid rate: zero or more.'); return; }
     try {
-      const settings = Object.fromEntries(['shop', 'shopAddress', 'mobile', 'rate'].map(field => [field, receipt[field]]));
+      const settings = Object.fromEntries(['shop', 'shopAddress', 'mobile', 'rate', 'unit'].map(field => [field, receipt[field]]));
       localStorage.setItem(settingsKey(userId), JSON.stringify(settings));
       setMessage('Shop details and rate saved in this browser. They will fill new receipts.');
     } catch { setMessage('Settings could not be saved.'); }
@@ -120,7 +121,7 @@ export default function TimberReceipt({ userId = 'local', initialReceipt }) {
       if (!Array.isArray(value.rows) || !value.rows.length || value.rows.length > 500 || !fields.every(([field]) => typeof value[field] === 'string') || typeof value.rate !== 'string' || typeof value.advance !== 'string' || typeof value.labour !== 'string' || typeof value.transport !== 'string' || !value.rows.every(row => ['wood', 'length', 'girth', 'rate'].every(field => typeof row[field] === 'string'))) throw new Error('Invalid draft');
       if (!confirm('Replace current entries with the saved draft?')) return;
       recordId.current = crypto.randomUUID(); revision.current = 0;
-      setReceipt({ ...value, rows: value.rows.map(row => ({ ...row, id: crypto.randomUUID() })) });
+      setReceipt({ ...value, unit: receiptUnit(value.unit), rows: value.rows.map(row => ({ ...row, id: crypto.randomUUID() })) });
       setMessage('Saved draft opened.');
     } catch { setMessage('Saved draft could not be opened.'); }
   };
@@ -128,17 +129,18 @@ export default function TimberReceipt({ userId = 'local', initialReceipt }) {
     <div className="receipt-editor">
 
       <h2>Wood measurements</h2>
-      <div className="form timber-rate"><label>Rate for all wood (₹ / CFT)<input aria-label="Rate for all wood (₹ / CFT)" type="number" inputMode="decimal" min="0" step="0.01" placeholder="e.g. 50 or 55" value={receipt.rate} onChange={event => { const rate = event.target.value; setReceipt(old => ({ ...old, rate, rows: old.rows.map(row => ({ ...row, rate })) })); setMessage(''); }} /></label><p className="hint">Enter the rate once. Amount = each wood's CFT × this rate.</p></div>
+      <div className="unit-picker" role="group" aria-label="Unit">{['CFT', 'CBM'].map(u => <button type="button" key={u} className={unit === u ? 'active' : 'secondary'} aria-pressed={unit === u} onClick={() => set('unit', u)}>{u}</button>)}</div>
+      <div className="form timber-rate"><label>Rate for all wood (₹ / {unit})<input aria-label={`Rate for all wood (₹ / ${unit})`} type="number" inputMode="decimal" min="0" step="0.01" placeholder="e.g. 50 or 55" value={receipt.rate} onChange={event => { const rate = event.target.value; setReceipt(old => ({ ...old, rate, rows: old.rows.map(row => ({ ...row, rate })) })); setMessage(''); }} /></label><p className="hint">Enter the rate once. Amount = each wood's {unit} × this rate.</p></div>
       {receipt.rows.some(row => row.rate !== receipt.rate) && <p className="notice" role="status">This older receipt has individual wood rates. Its original amounts are preserved below. Enter a rate above to apply it to every wood.</p>}
       <div className="timber-rows">{receipt.rows.map((row, index) => <div className="timber-row form" key={row.id}>
         <div className="timber-row-head"><b>Wood {index + 1}</b><button type="button" className="secondary" aria-label={`Wood ${index + 1} Remove`} disabled={receipt.rows.length === 1} onClick={() => set('rows', receipt.rows.filter(item => item.id !== row.id))}>Remove</button></div>
 
         <div className="timber-measures">{[['length', 'Length (ft)'], ['girth', 'Girth (in)']].map(([field, label]) => <label key={field}>{label}<input id={field === 'length' ? `timber-length-${row.id}` : undefined} aria-label={`Wood ${index + 1} ${label}`} type="number" inputMode="decimal" min="0" step="any" placeholder="0" value={row[field]} onChange={event => setRow(row.id, field, event.target.value)} /></label>)}</div>
-<p className="row-volume">CFT: <b>{totals.volumes[index] === null ? 'Enter measurements' : decimal(totals.volumes[index])}</b> · Amount: <b>{totals.volumes[index] !== null && Number.isFinite(totals.amounts[index]) && Number(row.rate) >= 0 && row.rate !== '' ? money(totals.amounts[index]) : '-'}</b></p>
+<p className="row-volume">{unit}: <b>{totals.volumes[index] === null ? 'Enter measurements' : decimal(totals.volumes[index])}</b> · Amount: <b>{totals.volumes[index] !== null && Number.isFinite(totals.amounts[index]) && Number(row.rate) >= 0 && row.rate !== '' ? money(totals.amounts[index]) : '-'}</b></p>
         <details className="timber-optional"><summary>Wood type (optional)</summary><label>Wood type<input aria-label={`Wood ${index + 1} type`} placeholder="e.g. Teak" maxLength={80} value={row.wood} onChange={event => setRow(row.id, 'wood', event.target.value)} /></label></details>
       </div>)}</div>
       <button type="button" className="secondary wide" onClick={() => { const row = { ...newRow(), rate: receipt.rate }; set('rows', [...receipt.rows, row]); requestAnimationFrame(() => { const input = document.getElementById(`timber-length-${row.id}`); input?.focus(); input?.scrollIntoView({block: 'center', behavior: 'smooth'}); }); }}>+ Add wood</button>
-      <div className="result"><span>Total CFT {totals.volumes.some(volume => volume === null) ? '(incomplete measurements)' : ''}</span><strong>{decimal(totals.cft)}</strong></div>
+      <div className="result"><span>Total {unit} {totals.volumes.some(volume => volume === null) ? '(incomplete measurements)' : ''}</span><strong>{decimal(totals.volume)}</strong></div>
       <div className="result"><span>Wood amount {totals.volumes.some(volume => volume === null) ? '(incomplete measurements)' : ''}</span><strong>{totals.valid ? money(totals.woodValue) : '-'}</strong></div>
       <details className="timber-billing"><summary>Need a receipt? Add names and billing details</summary>
       <div className="form"><h2>Receipt details</h2><div className="two">{fields.map(([field, label]) => <label key={field}>{label}<input type={field === 'date' ? 'date' : field === 'mobile' || field === 'customerMobile' ? 'tel' : 'text'} maxLength={field === 'mobile' || field === 'customerMobile' ? 20 : 160} value={receipt[field]} onChange={event => set(field, event.target.value)} /></label>)}</div></div>
@@ -167,9 +169,9 @@ export default function TimberReceipt({ userId = 'local', initialReceipt }) {
       <div className="receipt-heading"><p>Shri Vishwakarma Namah</p><h2>{receipt.shop || 'Shop / sawmill name'}</h2><p>{receipt.shopAddress || 'Shop address'}</p>{receipt.mobile && <p>Mobile: {receipt.mobile}</p>}<h3>Timber receipt</h3></div>
       <div className="receipt-meta"><span>Receipt no.: {receipt.number || '-'}</span><span>Date: {receipt.date ? receipt.date.split('-').reverse().join('/') : '-'}</span></div>
       <p>Customer name: {receipt.customer || '-'}</p>{receipt.customerMobile && <p>Customer mobile: {receipt.customerMobile}</p>}<p>Address / village: {receipt.village || '-'}</p>
-      <table><thead><tr><th scope="col">No.</th><th scope="col">Wood type</th><th scope="col">Length<br />(ft)</th><th scope="col">Girth<br />(in)</th><th scope="col">CFT</th><th scope="col">Rate<br />(₹/CFT)</th><th scope="col">Amount<br />(₹)</th></tr></thead><tbody>{receipt.rows.map((row, index) => <tr key={row.id}><td>{index + 1}</td><td>{row.wood || '-'}</td><td>{row.length || '-'}</td><td>{row.girth || '-'}</td><td>{totals.volumes[index] === null ? '-' : decimal(totals.volumes[index])}</td><td>{row.rate === '' || !Number.isFinite(Number(row.rate)) || Number(row.rate) < 0 ? '-' : Number(row.rate).toLocaleString('en-IN')}</td><td>{totals.volumes[index] !== null && Number.isFinite(totals.amounts[index]) && row.rate !== '' && Number(row.rate) >= 0 ? totals.amounts[index].toLocaleString('en-IN', {minimumFractionDigits:2,maximumFractionDigits:2}) : '-'}</td></tr>)}</tbody></table>
-      <div className="receipt-summary"><p><span>Total pieces</span><b>{receipt.rows.length}</b></p><p><span>Total CFT{totals.volumes.some(volume => volume === null) ? ' (incomplete)' : ''}</span><b>{decimal(totals.cft)}</b></p><p><span>Wood value</span><b>{totals.valid ? money(totals.woodValue) : '-'}</b></p><p><span>Sawing / cutting labour</span><b>{totals.valid ? money(totals.labour) : '-'}</b></p><p><span>Transport</span><b>{totals.valid ? money(totals.transport) : '-'}</b></p><p><span>Grand total</span><b>{totals.valid ? money(totals.total) : '-'}</b></p><p><span>Amount paid</span><b>{totals.valid ? money(totals.advance) : '-'}</b></p><p><span>{totals.balance < 0 ? 'Overpayment (refund)' : 'Balance due'}</span><b>{totals.valid ? money(Math.abs(totals.balance)) : '-'}</b></p></div>
-      <p className="receipt-method">CFT = length (ft) × girth (in)² ÷ 2304. Each wood amount uses unrounded CFT and is rounded to paise before adding. Displayed CFT uses 4 decimals; money uses 2.</p>
+      <table><thead><tr><th scope="col">No.</th><th scope="col">Wood type</th><th scope="col">Length<br />(ft)</th><th scope="col">Girth<br />(in)</th><th scope="col">{unit}</th><th scope="col">Rate<br />(₹/{unit})</th><th scope="col">Amount<br />(₹)</th></tr></thead><tbody>{receipt.rows.map((row, index) => <tr key={row.id}><td>{index + 1}</td><td>{row.wood || '-'}</td><td>{row.length || '-'}</td><td>{row.girth || '-'}</td><td>{totals.volumes[index] === null ? '-' : decimal(totals.volumes[index])}</td><td>{row.rate === '' || !Number.isFinite(Number(row.rate)) || Number(row.rate) < 0 ? '-' : Number(row.rate).toLocaleString('en-IN')}</td><td>{totals.volumes[index] !== null && Number.isFinite(totals.amounts[index]) && row.rate !== '' && Number(row.rate) >= 0 ? totals.amounts[index].toLocaleString('en-IN', {minimumFractionDigits:2,maximumFractionDigits:2}) : '-'}</td></tr>)}</tbody></table>
+      <div className="receipt-summary"><p><span>Total pieces</span><b>{receipt.rows.length}</b></p><p><span>Total {unit}{totals.volumes.some(volume => volume === null) ? ' (incomplete)' : ''}</span><b>{decimal(totals.volume)}</b></p><p><span>Wood value</span><b>{totals.valid ? money(totals.woodValue) : '-'}</b></p><p><span>Sawing / cutting labour</span><b>{totals.valid ? money(totals.labour) : '-'}</b></p><p><span>Transport</span><b>{totals.valid ? money(totals.transport) : '-'}</b></p><p><span>Grand total</span><b>{totals.valid ? money(totals.total) : '-'}</b></p><p><span>Amount paid</span><b>{totals.valid ? money(totals.advance) : '-'}</b></p><p><span>{totals.balance < 0 ? 'Overpayment (refund)' : 'Balance due'}</span><b>{totals.valid ? money(Math.abs(totals.balance)) : '-'}</b></p></div>
+      <p className="receipt-method">{unit === 'CBM' ? 'CBM = CFT ÷ 35.3147, where CFT = length (ft) × girth (in)² ÷ 2304.' : 'CFT = length (ft) × girth (in)² ÷ 2304.'} Each wood amount uses unrounded {unit} and is rounded to paise before adding. Displayed {unit} uses 4 decimals; money uses 2.</p>
       <div className="receipt-signature">Signature: ____________________</div>
     </article>
   </section>;
