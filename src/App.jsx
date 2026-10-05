@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from "react";
+import {buildHash,parseHash,pushRoute,initHistory} from "./navHistory.js";
 import {firebaseReady} from "./firebase";
 import {authError,initAuthPersistence,loginEmail,loginGoogle,logout,registerEmail,resetPassword,watchAuth} from "./authService";
 import RoundReceiptView from './RoundReceiptView';
@@ -25,9 +26,11 @@ function Splash({ready}){
 
 export default function App(){
  const [calculator,setCalculator]=useState({kind:"size",system:"imperial"});
- const openCalculator=(kind,system)=>{setCalculator({kind,system});setTab("Wood");window.scrollTo(0,0)};
- const [user,setUser]=useState(null),[loading,setLoading]=useState(true),[authMode,setAuthMode]=useState("login"),[tab,setTab]=useState("Home"),[online,setOnline]=useState(navigator.onLine),[openedReceipt,setOpenedReceipt]=useState(null);
- useEffect(()=>{initAuthPersistence().catch(()=>{});return watchAuth(u=>{setOpenedReceipt(null);setTab("Home");setUser(u);setLoading(false)})},[]);
+ const openCalculator=(kind,system)=>{const calc={kind,system};setCalculator(calc);pushRoute(buildHash("Wood",calc));setTabRaw("Wood");window.scrollTo(0,0)};
+ const [user,setUser]=useState(null),[loading,setLoading]=useState(true),[authMode,setAuthMode]=useState("login"),[tab,setTabRaw]=useState(()=>{const p=parseHash(location.hash);return p.tab}),[online,setOnline]=useState(navigator.onLine),[openedReceipt,setOpenedReceipt]=useState(null);
+ const setTab=t=>{pushRoute(buildHash(t));setTabRaw(t)};
+ useEffect(()=>{const p=parseHash(location.hash);if(p.calc)setCalculator(p.calc);initHistory(p);const onPop=()=>{const q=parseHash(location.hash);if(q.calc)setCalculator(q.calc);setTabRaw(q.tab)};addEventListener("popstate",onPop);return()=>removeEventListener("popstate",onPop)},[]);
+ useEffect(()=>{initAuthPersistence().catch(()=>{});let first=true;return watchAuth(u=>{setOpenedReceipt(null);if(!first){history.replaceState({sab:1},"","#/home");setTabRaw("Home")}first=false;setUser(u);setLoading(false)})},[]);
  useEffect(()=>{const update=()=>setOnline(navigator.onLine);addEventListener("online",update);addEventListener("offline",update);return()=>{removeEventListener("online",update);removeEventListener("offline",update)}},[]);
  const splash=<Splash ready={!loading}/>;
  if(loading)return <>{splash}{null}</>;
