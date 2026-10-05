@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from "react";
 import {firebaseReady} from "./firebase";
 import {authError,initAuthPersistence,loginEmail,loginGoogle,logout,registerEmail,resetPassword,watchAuth} from "./authService";
+import RoundReceiptView from './RoundReceiptView';
 import TimberReceipt from "./TimberReceipt";
 import BakiHisab from "./BakiHisab";
 import CustomerList from "./CustomerList";
@@ -34,13 +35,14 @@ export default function App(){
  return <>{splash}<div className="app"><header><div><img className="brand-logo" src={`${import.meta.env.BASE_URL}icons/1-timber-logo.png`} alt="SAB TOOLS" width="40" height="40"/><div className="tag">Timber CFT and receipts</div></div><div className="headerRight"><span className={"status "+(online?"on":"off")}>{online?"Online":"Offline"}</span>{user&&<div aria-label="Signed-in account"><AccountMenu key={user.uid} user={user} onLogout={logout} items={[["Home","Home"],["SizeWood","Size wood"],["FlushDoor","Flush door"],["RoundImperial","Round wood (ft/in)"],["RoundMetric","Round wood (metric)"],["Receipt","Receipt"],["Saved","Saved"],["Baki","Baki hisab"],["Customers","Customers"],["Report","Report"],["Level","Level"]]} activeItem={tab} onSelect={id=>id==="SizeWood"?openCalculator("size","imperial"):id==="FlushDoor"?openCalculator("door","imperial"):id==="RoundImperial"?openCalculator("round","imperial"):id==="RoundMetric"?openCalculator("round","metric"):setTab(id)}/></div>}</div></header><main>
  {!firebaseReady&&<p className="hint local-mode-banner">Local mode: Firebase is unavailable. You can create and save receipts on this device.</p>}
  <div hidden={tab!=="Home"}><WoodHome onSelect={setTab} onCalculator={openCalculator}/></div>
- {tab==="Wood"&&<WoodCalculator key={calculator.kind+calculator.system} kind={calculator.kind} initialSystem={calculator.system} onReceipt={()=>setTab("Receipt")} onBack={()=>setTab("Home")}/>}
+ {tab==="Wood"&&<WoodCalculator userId={user?.uid||"local"} key={(user?.uid||"local")+calculator.kind+calculator.system} kind={calculator.kind} initialSystem={calculator.system} onReceipt={()=>setTab("Receipt")} onBack={()=>setTab("Home")}/>}
  {["Help","SaveInvoice","Profile","Language","Manual","Share","Rate","Privacy","Bug"].includes(tab)&&<MenuPage key={tab} page={tab} user={user} onSelect={setTab}/>}
- <div hidden={tab!=="Receipt"}><TimberReceipt key={user?.uid||"local"} userId={user?.uid||"local"} initialReceipt={openedReceipt?.uid===(user?.uid||"local")?openedReceipt.receipt:null}/></div>
+ {tab==="RoundSaved"&&openedReceipt?.uid===(user?.uid||"local")&&<RoundReceiptView key={openedReceipt.receipt.id} receipt={openedReceipt.receipt} userId={user?.uid||"local"} saved onBack={()=>setTab("Saved")}/>}
+ <div hidden={tab!=="Receipt"}><TimberReceipt key={user?.uid||"local"} userId={user?.uid||"local"} initialReceipt={openedReceipt?.receipt.type!=="round-wood-receipt"&&openedReceipt?.uid===(user?.uid||"local")?openedReceipt.receipt:null}/></div>
  <div hidden={tab!=="Baki"}><BakiHisab key={user?.uid||"local"} userId={user?.uid||"local"} active={tab==="Baki"}/></div>
  <div hidden={tab!=="Customers"}><CustomerList key={user?.uid||"local"} userId={user?.uid||"local"} active={tab==="Customers"}/></div>
  <div hidden={tab!=="Report"}><SaleReport key={user?.uid||"local"} userId={user?.uid||"local"} active={tab==="Report"}/></div>
- <div hidden={tab!=="Saved"}><SavedReceipts key={user?.uid||"local"} userId={user?.uid||"local"} active={tab==="Saved"} onOpen={receipt=>{if(!confirm("Open this saved receipt? Current unsaved entries will be replaced."))return;setOpenedReceipt({uid:user?.uid||"local",receipt:{...receipt}});setTab("Receipt")}}/></div><div hidden={tab!=="Level"}><LevelTool active={tab==="Level"}/></div></main></div></>;
+ <div hidden={tab!=="Saved"}><SavedReceipts key={user?.uid||"local"} userId={user?.uid||"local"} active={tab==="Saved"} onOpen={receipt=>{if(receipt.type==="round-wood-receipt"){setOpenedReceipt({uid:user?.uid||"local",receipt});setTab("RoundSaved");window.scrollTo(0,0);return}if(!confirm("Open this saved receipt? Current unsaved entries will be replaced."))return;setOpenedReceipt({uid:user?.uid||"local",receipt:{...receipt}});setTab("Receipt")}}/></div><div hidden={tab!=="Level"}><LevelTool active={tab==="Level"}/></div></main></div></>;
 }
 
 function AuthScreen({mode,setMode,online}){
