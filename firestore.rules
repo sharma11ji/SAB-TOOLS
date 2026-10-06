@@ -11,6 +11,15 @@ service cloud.firestore {
   match /users/{uid} {
    allow read, create, update: if own(uid);
    allow delete: if false;
+   match /pushSubscriptions/{id} {
+    allow read, delete: if own(uid);
+    allow create, update: if own(uid)
+      && request.resource.data.keys().hasOnly(["token", "enabled", "updatedAt", "sentRelease"])
+      && request.resource.data.token is string
+      && request.resource.data.token.size() > 0 && request.resource.data.token.size() < 4096
+      && request.resource.data.enabled == true
+      && request.resource.data.updatedAt == request.time;
+   }
    match /preferences/{id} {
     allow read, delete: if own(uid);
     allow create, update: if own(uid) && ts();

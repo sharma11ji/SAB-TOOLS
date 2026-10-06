@@ -17,3 +17,9 @@ header{background:#f5f1ea;color:#211b15;border-bottom:1px solid #e3ddd4;box-shad
 .header-brand{display:flex;align-items:center;gap:10px;min-width:0}.header-brand .tag{margin:0;line-height:1.25;text-align:left}.header-avatar{width:40px;height:40px;flex:0 0 40px;border-radius:50%;object-fit:cover;display:block;background:#f3e9dc}.header-avatar-initial{display:grid;place-items:center;font-weight:800;font-size:18px;color:#6f3e13;border:1px solid #d6c9b9}
 .header-text{display:flex;flex-direction:column;min-width:0;flex:1 1 auto}.header-name{font-size:15px;font-weight:700;line-height:1.2;color:#211b15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.header>*,header>div:first-child{min-width:0}.header-brand{flex:1 1 auto}.header-text .tag{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .header-brand{flex:1 1 0;overflow:hidden}.header-text{flex:1 1 0}.headerRight{flex:0 0 auto}
+
+/* Update stays out of the header and never reloads a working form on its own. */
+.pwa-update{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:2000;max-width:440px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid #d8cebd;border-radius:12px;background:#fffaf2;color:#30291f;box-shadow:0 3px 16px #0002;font-size:14px}
+.pwa-update button{flex-shrink:0;padding:8px 14px;border:0;border-radius:8px;background:#31543b;color:#fff;font-weight:600;cursor:pointer}
+
+.push-settings{margin:20px 0;padding:16px;border:1px solid #d9cab2;border-radius:14px;background:#fbf7ef}.push-settings p{line-height:1.4}.push-settings button{padding:10px 14px;margin:4px 8px 4px 0;border-radius:8px;border:1px solid #a69883;background:#fff;font:inherit}
