@@ -63,3 +63,13 @@ test('sender verifies live release, authenticates privately, and sends only owne
   assert.ok(calls.find(c=>c.opts.method==='PATCH'));
  }finally{globalThis.fetch=savedFetch;process.env=savedEnv;rmSync(dir,{recursive:true,force:true})}
 });
+
+test('push identity config is separate from unchanged register owner behavior',()=>{
+ const service=readFileSync(new URL('../src/pushNotifications.js',import.meta.url),'utf8');
+ const ui=readFileSync(new URL('../src/UpdateNotifications.jsx',import.meta.url),'utf8');
+ const workflow=readFileSync(new URL('../.github/workflows/build.yml',import.meta.url),'utf8');
+ assert.ok(service.includes('VITE_PUSH_OWNER_UID'));assert.ok(ui.includes('VITE_PUSH_OWNER_UID'));
+ assert.ok(!service.includes('VITE_REGISTER_OWNER_UID'));assert.ok(!ui.includes('VITE_REGISTER_OWNER_UID'));
+ assert.ok(workflow.includes('PUSH_OWNER_UID: ${{ secrets.VITE_PUSH_OWNER_UID }}'));
+ assert.ok(workflow.includes('VITE_REGISTER_OWNER_UID: ${{ secrets.VITE_REGISTER_OWNER_UID }}'));
+});

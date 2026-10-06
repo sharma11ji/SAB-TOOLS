@@ -5,7 +5,7 @@ export default function UpdateNotifications({ user, active }) {
   const [used, setUsed] = useState(() => localStorage.getItem('sab-tools-used') === '1');
   const [dismissed, setDismissed] = useState(() => localStorage.getItem('sab-tools-push-dismissed') === '1');
   const [enabled, setEnabled] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState('');
-  const owner = user?.uid === import.meta.env.VITE_REGISTER_OWNER_UID;
+  const owner = user?.uid === import.meta.env.VITE_PUSH_OWNER_UID;
   useEffect(() => { if (!active) { localStorage.setItem('sab-tools-used', '1'); setUsed(true); } }, [active]);
   useEffect(() => {
     let live = true;

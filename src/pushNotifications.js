@@ -2,7 +2,7 @@ import { getMessaging, getToken, deleteToken, isSupported, onMessage } from 'fir
 import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { app, db } from './firebase';
 const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY?.trim();
-export const pushConfigured = Boolean(app && db && vapidKey && import.meta.env.VITE_REGISTER_OWNER_UID);
+export const pushConfigured = Boolean(app && db && vapidKey && import.meta.env.VITE_PUSH_OWNER_UID);
 let messaging, unsubscribe;
 const idKey = 'sab-tools-push-device';
 function deviceId() {
@@ -11,7 +11,7 @@ function deviceId() {
   return id;
 }
 export async function enableUpdatePush(uid, ask = false) {
-  if (!pushConfigured || uid !== import.meta.env.VITE_REGISTER_OWNER_UID)
+  if (!pushConfigured || uid !== import.meta.env.VITE_PUSH_OWNER_UID)
     throw new Error('Update notifications are not available on this device yet.');
   if (ask && Notification.permission === 'default') await Notification.requestPermission();
   if (!(await isSupported())) throw new Error('Update notifications are not supported on this browser.');

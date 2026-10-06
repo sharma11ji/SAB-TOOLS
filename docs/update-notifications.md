@@ -21,7 +21,7 @@ Open Firebase Console, select the app's project, then gear > Project settings > 
 - Name: VITE_FIREBASE_VAPID_KEY
 - Value: the public VAPID key
 
-The public VAPID key is safe to embed in the app; never substitute the private key. Existing VITE_FIREBASE_* secrets and VITE_REGISTER_OWNER_UID stay in use. Confirm VITE_REGISTER_OWNER_UID is this user's Auth UID in Firebase Authentication > Users. Do not guess it from an email.
+The public VAPID key is safe to embed in the app; never substitute the private key. Existing VITE_FIREBASE_* secrets and VITE_PUSH_OWNER_UID stay in use. Confirm VITE_PUSH_OWNER_UID is this user's Auth UID in Firebase Authentication > Users. For this setup, the user confirmed amrjkumar848502@gmail.com, verified Auth UID BTfrq1ucz8QEQFJ4OPP772yuoJt2. Set the NEW VITE_PUSH_OWNER_UID secret to that UID. Keep VITE_REGISTER_OWNER_UID unchanged; it controls receipt/register behavior for a different account. Enrollment requires signing into SAB TOOLS with amrjkumar848502@gmail.com, not a different remembered app account. Do not hardcode this UID in source.
 
 In Google Cloud Console for this same project, APIs & Services > Library: verify Firebase Cloud Messaging API (HTTP v1) and FCM Registration API are enabled. New projects may already enable registration. No legacy FCM server key is used.
 
