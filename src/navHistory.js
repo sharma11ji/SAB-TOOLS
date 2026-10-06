@@ -1,5 +1,5 @@
 // Browser-history navigation helpers (hash routes work on GitHub Pages refresh).
-export const TABS=["Home","Receipt","Saved","Baki","Customers","Report","Level","Help","SaveInvoice","Profile","Language","Manual","Share","Rate","Privacy","Bug"];
+export const TABS=["Home","Cutting","Receipt","Saved","Baki","Customers","Report","Level","Help","SaveInvoice","Profile","Language","Manual","Share","Rate","Privacy","Bug"];
 const KINDS=["size","door","round"],SYSTEMS=["imperial","metric"];
 export function buildHash(tab,calc){
  if(tab==="Wood"&&calc)return `#/wood/${calc.kind}/${calc.system}`;

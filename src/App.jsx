@@ -1,3 +1,4 @@
+import CuttingOptimizer from './CuttingOptimizer';
 import UpdateNotifications from "./UpdateNotifications";
 import HeaderBrand from "./HeaderBrand";
 import React, {useEffect, useState} from "react";
@@ -37,9 +38,10 @@ export default function App(){
  const splash=<Splash ready={!loading}/>;
  if(loading)return <>{splash}{null}</>;
  if(!user&&firebaseReady)return <>{splash}<AuthScreen mode={authMode} setMode={setAuthMode} online={online}/></>;
- return <>{splash}<div className="app"><header><HeaderBrand user={user} logoSrc={`${import.meta.env.BASE_URL}icons/1-timber-logo.png`}/><div className="headerRight"><span className={"status "+(online?"on":"off")}>{online?"Online":"Offline"}</span>{user&&<div aria-label="Signed-in account"><AccountMenu key={user.uid} user={user} onLogout={logout} items={[["Home","Home"],["SizeWood","Size wood"],["FlushDoor","Flush door"],["RoundImperial","Round wood (ft/in)"],["RoundMetric","Round wood (metric)"],["Receipt","Receipt"],["Saved","Saved"],["Baki","Baki hisab"],["Customers","Customers"],["Report","Report"],["Level","Level"]]} activeItem={tab} onSelect={id=>id==="SizeWood"?openCalculator("size","imperial"):id==="FlushDoor"?openCalculator("door","imperial"):id==="RoundImperial"?openCalculator("round","imperial"):id==="RoundMetric"?openCalculator("round","metric"):setTab(id)}/></div>}</div></header><main>
+ return <>{splash}<div className="app"><header><HeaderBrand user={user} logoSrc={`${import.meta.env.BASE_URL}icons/1-timber-logo.png`}/><div className="headerRight"><span className={"status "+(online?"on":"off")}>{online?"Online":"Offline"}</span>{user&&<div aria-label="Signed-in account"><AccountMenu key={user.uid} user={user} onLogout={logout} items={[["Home","Home"],["SizeWood","Size wood"],["FlushDoor","Flush door"],["RoundImperial","Round wood (ft/in)"],["RoundMetric","Round wood (metric)"],["Cutting","Cutting optimizer"],["Receipt","Receipt"],["Saved","Saved"],["Baki","Baki hisab"],["Customers","Customers"],["Report","Report"],["Level","Level"]]} activeItem={tab} onSelect={id=>id==="SizeWood"?openCalculator("size","imperial"):id==="FlushDoor"?openCalculator("door","imperial"):id==="RoundImperial"?openCalculator("round","imperial"):id==="RoundMetric"?openCalculator("round","metric"):setTab(id)}/></div>}</div></header><main>
  {!firebaseReady&&<p className="hint local-mode-banner">Local mode: Firebase is unavailable. You can create and save receipts on this device.</p>}
  <div hidden={tab!=="Home"}><WoodHome onSelect={setTab} onCalculator={openCalculator}/><UpdateNotifications user={user} active={tab==="Home"}/></div>
+ {tab==="Cutting"&&<CuttingOptimizer onBack={()=>setTab("Home")}/>}
  {tab==="Wood"&&<WoodCalculator userId={user?.uid||"local"} key={(user?.uid||"local")+calculator.kind+calculator.system} kind={calculator.kind} initialSystem={calculator.system} onReceipt={()=>setTab("Receipt")} onBack={()=>setTab("Home")}/>}
  {["Help","SaveInvoice","Profile","Language","Manual","Share","Rate","Privacy","Bug"].includes(tab)&&<MenuPage key={tab} page={tab} user={user} onSelect={setTab}/>}
  {tab==="RoundSaved"&&openedReceipt?.uid===(user?.uid||"local")&&<RoundReceiptView key={openedReceipt.receipt.id} receipt={openedReceipt.receipt} userId={user?.uid||"local"} saved onBack={()=>setTab("Saved")}/>}
