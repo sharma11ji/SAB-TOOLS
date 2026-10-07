@@ -1,0 +1,32 @@
+import React,{useState,useRef,useEffect} from 'react';
+import {openPreview,closePreview,isPreview} from './navHistory.js';
+import {addRoundRow,deleteRoundRow,roundRowTotals} from './roundRows';
+import './roundWood.css';
+import {PageHeader,SectionHeader,Card,Button,InputField,FieldGrid,ResultCard,EmptyState,IconButton} from './ui';
+import {makeRoundReceipt} from './roundReceipt';
+import RoundReceiptView from './RoundReceiptView';
+import {loadStoreProfile} from './storeProfile';
+import {db} from './firebase';
+import {getRecord} from './firestore';
+export default function RoundWood({system,onBack,userId='local'}) {
+ const metric=system==='metric',unit=metric?'CBM':'CFT';
+ const [rows,setRows]=useState([]),[fields,setFields]=useState({length:'',girth:'',pieces:'1'}),[rate,setRate]=useState(''),[error,setError]=useState('');
+ const lengthInput=useRef(null);
+ useEffect(()=>{const onPop=()=>{if(!isPreview(history.state))setReceipt(null)};addEventListener('popstate',onPop);return()=>removeEventListener('popstate',onPop)},[]);
+ const [receipt,setReceipt]=useState(null),[receiptBusy,setReceiptBusy]=useState(false),[customer,setCustomer]=useState({name:'',address:'',phone:''});
+ const createReceipt=async()=>{
+  setReceiptBusy(true);setError('');
+  try {
+   const cached=loadStoreProfile(localStorage,userId);let store=cached.profile;
+   if(db&&userId!=='local'&&!cached.pendingCloud){try{const record=await getRecord(userId,[]);if(record?.storeProfile)store=record.storeProfile}catch{}}
+   const next=makeRoundReceipt(rows,system,rate,store,new Date(),customer);
+   if(!next){setError('Add wood and check the rate before creating a receipt.');return}
+   openPreview();setReceipt({...next,id:crypto.randomUUID(),savedAt:next.date});
+  }catch{setError('Could not create the receipt image. Please try again.')}finally{setReceiptBusy(false)}
+ };
+ if(receipt)return <RoundReceiptView receipt={receipt} userId={userId} onBack={()=>{if(isPreview(history.state))closePreview();else setReceipt(null)}}/>;
+ const totals=roundRowTotals(rows,system,rate);
+ const add=()=>{const next=addRoundRow(rows,system,fields,crypto.randomUUID());if(!next){setError('Enter positive length and girth, and a whole quantity of 1 or more.');return}setRows(next);setFields({length:'',girth:'',pieces:'1'});setError('');lengthInput.current?.focus()};
+ const badge=<>{metric?'M':'F'}<sup>3</sup></>;
+ return <section className="round-multi"><PageHeader title="Round wood" badge={badge} onBack={onBack} backLabel="Your tools" subtitle={`${metric?'Meter, c.m.':'Foot, Inch'} · Quarter-girth method`}/><ResultCard aria-live="polite" items={[{label:'Total wood',value:totals.pieces,unit:'pieces'},{label:'Total volume',value:totals.volume.toFixed(3),unit}]}/><Card as="form" className="round-entry" onSubmit={e=>{e.preventDefault();add()}} noValidate><h2>Add wood</h2><FieldGrid cols={3}>{[['length','Length',metric?'m':'ft'],['girth','Girth',metric?'cm':'in'],['pieces','Quantity','pcs']].map(([key,label,suffix])=><InputField key={key} label={label} unit={suffix} ref={key==='length'?lengthInput:null} type="number" inputMode={key==='pieces'?'numeric':'decimal'} min="0" step={key==='pieces'?'1':'any'} value={fields[key]} onChange={e=>{setFields({...fields,[key]:e.target.value});setError('')}}/>)}</FieldGrid><Button variant="primary" block type="submit" className="round-add" style={{marginTop:'var(--space-4)'}}>+ Add</Button>{error&&<p className="wood-error" role="alert" style={{marginTop:'var(--space-3)'}}>{error}</p>}</Card><section className="round-list"><SectionHeader title="Measurements" aside={`${rows.length} ${rows.length===1?'line':'lines'}`}/>{rows.length===0?<EmptyState image={`${import.meta.env.BASE_URL}icons/wood-logs.svg`} title="No wood added yet">Add a measurement above.</EmptyState>:<div className="round-table-wrap"><table><thead><tr><th>No.</th><th>Length<br/><small>{metric?'m':'ft'}</small></th><th>Girth<br/><small>{metric?'cm':'in'}</small></th><th>Qty</th><th>{unit}</th><th><span className="round-sr-only">Delete</span></th></tr></thead><tbody>{rows.map((row,index)=><tr key={row.id}><td>{index+1}</td><td>{row.length}</td><td>{row.girth}</td><td>{row.pieces}</td><td>{totals.volumes[index].toFixed(3)}</td><td><IconButton label={`Delete row ${index+1}`} onClick={()=>setRows(deleteRoundRow(rows,row.id))}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M4 7h16 M9 7V4h6v3 M6 7l1 14h10l1-14 M10 11v6 M14 11v6"/></svg></IconButton></td></tr>)}</tbody><tfoot><tr><th colSpan="3">Total</th><td>{totals.pieces}</td><td>{totals.volume.toFixed(3)}</td><td/></tr></tfoot></table></div>}</section><Card className="round-price" style={{marginTop:'var(--space-4)'}}><InputField label={`Rate per ${unit}`} unit="₹" type="number" inputMode="decimal" min="0" step="any" value={rate} placeholder="Optional" onChange={e=>setRate(e.target.value)}/><div className="round-amount" aria-live="polite"><span>Total amount</span><b>{totals.amount===null?'—':totals.amount.toLocaleString('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:2})}</b></div></Card>{totals.hasPrice&&totals.amount===null&&<p className="wood-error" role="alert" style={{marginTop:'var(--space-3)'}}>Enter a rate of 0 or more within the supported range.</p>}<Card className="round-customer" style={{marginTop:'var(--space-4)'}}><SectionHeader title="Customer details" aside="Optional" className="ui-section-header--flush"/><div className="ui-stack" style={{gap:'var(--space-3)'}}><InputField label="Customer name" maxLength={120} value={customer.name} onChange={e=>setCustomer({...customer,name:e.target.value})}/><InputField label="Customer address" multiline maxLength={400} rows={2} value={customer.address} onChange={e=>setCustomer({...customer,address:e.target.value})}/><InputField label="Customer phone" type="tel" maxLength={40} value={customer.phone} onChange={e=>setCustomer({...customer,phone:e.target.value})}/></div></Card><Button variant="primary" block className="round-receipt-button" style={{marginTop:'var(--space-4)'}} disabled={!rows.length||receiptBusy||(totals.hasPrice&&totals.amount===null)} onClick={createReceipt}>{receiptBusy?'Creating receipt...':'Save / share receipt'}</Button><p className="ui-hint" style={{margin:'var(--space-3) 0 0'}}>Measurements stay on this page until you leave. Tap Save receipt on the preview to keep a snapshot in Saved.</p></section>;
+}
