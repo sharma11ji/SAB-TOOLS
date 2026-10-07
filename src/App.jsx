@@ -1,3 +1,4 @@
+import LaunchSplash from './LaunchSplash';
 import CuttingOptimizer from './CuttingOptimizer';
 import UpdateNotifications from "./UpdateNotifications";
 import HeaderBrand from "./HeaderBrand";
@@ -16,17 +17,6 @@ import {SavedReceipts, LevelTool} from "./ReceiptTools";
 import {email} from "./validation";
 import WoodCalculator,{WoodHome} from "./WoodCalculators";
 
-const MIN_SPLASH_MS=1500;
-function Splash({ready}){
- const [minDone,setMinDone]=useState(false),[gone,setGone]=useState(false);
- useEffect(()=>{const t=setTimeout(()=>setMinDone(true),MIN_SPLASH_MS);return()=>clearTimeout(t)},[]);
- const fade=ready&&minDone;
- useEffect(()=>{if(!fade)return;const t=setTimeout(()=>setGone(true),500);return()=>clearTimeout(t)},[fade]);
- if(gone)return null;
- const base=import.meta.env.BASE_URL;
- return <div className={"splash-overlay"+(fade?" fade":"")} role="status" aria-label="Loading"><img className="splash-logo" src={base+"icons/1-timber-logo.png"} alt="" width="104" height="104"/><div className="splash-bar"><i/></div><small className="splash-text">Loading...</small></div>;
-}
-
 export default function App(){
  const [calculator,setCalculator]=useState({kind:"size",system:"imperial"});
  const openCalculator=(kind,system)=>{const calc={kind,system};setCalculator(calc);pushRoute(buildHash("Wood",calc));setTabRaw("Wood");window.scrollTo(0,0)};
@@ -35,7 +25,7 @@ export default function App(){
  useEffect(()=>{const p=parseHash(location.hash);if(p.calc)setCalculator(p.calc);initHistory(p);const onPop=()=>{const q=parseHash(location.hash);if(q.calc)setCalculator(q.calc);setTabRaw(q.tab)};addEventListener("popstate",onPop);return()=>removeEventListener("popstate",onPop)},[]);
  useEffect(()=>{initAuthPersistence().catch(()=>{});let first=true;return watchAuth(u=>{setOpenedReceipt(null);if(!first){history.replaceState({sab:1},"","#/home");setTabRaw("Home")}first=false;setUser(u);setLoading(false)})},[]);
  useEffect(()=>{const update=()=>setOnline(navigator.onLine);addEventListener("online",update);addEventListener("offline",update);return()=>{removeEventListener("online",update);removeEventListener("offline",update)}},[]);
- const splash=<Splash ready={!loading}/>;
+ const splash=<LaunchSplash/>;
  if(loading)return <>{splash}{null}</>;
  if(!user&&firebaseReady)return <>{splash}<AuthScreen mode={authMode} setMode={setAuthMode} online={online}/></>;
  return <>{splash}<div className="app"><header><HeaderBrand user={user} logoSrc={`${import.meta.env.BASE_URL}icons/1-timber-logo.png`}/><div className="headerRight"><span className={"status "+(online?"on":"off")}>{online?"Online":"Offline"}</span>{user&&<div aria-label="Signed-in account"><AccountMenu key={user.uid} user={user} onLogout={logout} items={[["Home","Home"],["SizeWood","Size wood"],["FlushDoor","Flush door"],["RoundImperial","Round wood (ft/in)"],["RoundMetric","Round wood (metric)"],["Cutting","Cutting optimizer"],["Receipt","Receipt"],["Saved","Saved"],["Baki","Baki hisab"],["Customers","Customers"],["Report","Report"],["Level","Level"]]} activeItem={tab} onSelect={id=>id==="SizeWood"?openCalculator("size","imperial"):id==="FlushDoor"?openCalculator("door","imperial"):id==="RoundImperial"?openCalculator("round","imperial"):id==="RoundMetric"?openCalculator("round","metric"):setTab(id)}/></div>}</div></header><main>
