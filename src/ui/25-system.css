@@ -1,0 +1,162 @@
+/* SAB TOOLS design system: base typography, shared components and variants. Loaded after all page CSS. */
+html{-webkit-text-size-adjust:100%}
+:root{font-family:var(--font-sans);font-size:var(--fs-body);line-height:var(--lh-body);color:var(--c-text);background:var(--c-bg)}
+body{font-family:var(--font-sans);font-size:var(--fs-body);font-weight:var(--fw-body)}
+button,input,select,textarea{font-family:inherit}
+h1{font-size:var(--fs-page);font-weight:var(--fw-page);line-height:var(--lh-tight);margin:0 0 var(--space-4)}
+h2{font-size:var(--fs-section);font-weight:var(--fw-section);line-height:var(--lh-tight);margin:var(--space-5) 0 var(--space-3)}
+h3{font-size:var(--fs-body);font-weight:var(--fw-section);margin:0 0 var(--space-2)}
+p{margin:0 0 var(--space-3)}
+main{max-width:var(--container-wide);margin:0 auto;padding:var(--space-4) var(--page-pad) var(--space-6)}
+a{color:var(--c-primary)}
+:focus-visible{outline:2px solid var(--c-focus);outline-offset:2px}
+
+/* Page containers: every tool page uses the same width and padding */
+.ui-page{max-width:var(--container-page);margin:0 auto;min-width:0;color:var(--c-text)}
+.wood-home,.wood-calculator,.round-multi,.round-receipt-page,.cutting-tool,.store-profile,.menu-page,.timber-tool{max-width:var(--container-page);margin:0 auto;color:var(--c-text)}
+
+/* Page header */
+.ui-page-header{margin-bottom:var(--space-4)}
+.ui-page-header h1{display:flex;align-items:center;gap:var(--space-2);margin:0}
+.ui-page-header .ui-page-sub{margin:var(--space-1) 0 0;font-size:var(--fs-help);color:var(--c-text-2)}
+.ui-back{display:inline-flex;align-items:center;gap:var(--space-1);min-height:var(--h-button-sm);margin:0 0 var(--space-1) calc(var(--space-2) * -1);padding:0 var(--space-2);border:0;background:none;color:var(--c-primary);font-size:var(--fs-label);font-weight:var(--fw-label);border-radius:var(--radius-sm)}
+.ui-badge{display:inline-flex;align-items:center;font-size:var(--fs-help);font-weight:var(--fw-section);background:var(--c-primary-soft);color:var(--c-primary);padding:var(--space-1) var(--space-2);border-radius:var(--radius-sm)}
+
+/* Section header */
+.ui-section-header{display:flex;align-items:baseline;justify-content:space-between;gap:var(--space-3);margin:var(--space-5) 0 var(--space-3)}
+.ui-section-header h2{margin:0}
+.ui-section-header small,.ui-section-header .ui-aside{font-size:var(--fs-help);color:var(--c-text-2);font-weight:var(--fw-help)}
+
+/* Cards: one base, controlled variants */
+.ui-card,.card,.form,.empty,.history,.projectCard,.cutSaved,.round-entry,.round-price,.round-customer,.cut-card,.wood-measure-form,.menu-page-card,.baki-card,.push-settings,.authCard{
+  background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--radius-lg);padding:var(--space-4);box-shadow:var(--shadow-card);color:var(--c-text);min-height:0}
+.ui-card{margin:0 0 var(--space-4);min-width:0}
+.ui-card>h2:first-child,.ui-card>h3:first-child{margin-top:0}
+.ui-card--tool{display:flex;flex-direction:column;gap:var(--space-2);text-align:left;width:100%;cursor:pointer}
+.ui-card--info,.menu-feedback,.cut-safety{background:var(--c-primary-soft);border:1px solid var(--c-primary-border);border-left-width:1px;border-radius:var(--radius-lg);color:var(--c-text);padding:var(--space-4);box-shadow:none}
+.ui-card--warning,.notice{background:var(--c-warn-bg);border:1px solid #e3c98a;color:var(--c-warn);border-radius:var(--radius-lg);padding:var(--space-3) var(--space-4);box-shadow:none}
+.ui-card--warning.ui-card--danger,.error,.wood-error{background:var(--c-danger-bg);border:1px solid var(--c-danger-border);color:var(--c-danger);border-radius:var(--radius-md);padding:var(--space-3);font-size:var(--fs-label);box-shadow:none}
+.success{background:var(--c-success-bg);color:var(--c-success);border:1px solid #c5e0cc;border-radius:var(--radius-md);padding:var(--space-3);font-size:var(--fs-label)}
+.ui-list-card{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);margin:0 0 var(--space-2);padding:var(--space-3) var(--space-4);text-align:left;width:100%;font-size:var(--fs-body)}
+
+/* Buttons */
+.ui-btn,.primary,.secondary,.wood-calculate,.round-add,.round-receipt-button,.menu-primary,.store-save,.google{
+  display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);box-sizing:border-box;
+  min-height:var(--h-button);padding:0 var(--space-4);border-radius:var(--radius-md);border:1px solid transparent;
+  font-size:var(--fs-body);font-weight:var(--fw-section);line-height:var(--lh-tight);text-align:center;cursor:pointer;
+  transition:background-color .12s,transform .06s;-webkit-tap-highlight-color:transparent}
+.ui-btn--primary,.primary,.wood-calculate,.round-add,.round-receipt-button,.menu-primary,.store-save{background:var(--c-primary);color:#fff;border-color:var(--c-primary)}
+.ui-btn--secondary,.secondary,.google{background:var(--c-primary-soft);color:var(--c-primary-press);border-color:var(--c-primary-border)}
+.ui-btn--ghost{background:transparent;color:var(--c-primary);border-color:transparent}
+.ui-btn--sm{min-height:var(--h-button-sm)}
+.ui-btn--block,.wide,.wood-calculate,.round-add,.round-receipt-button,.menu-primary{width:100%}
+.ui-btn:active,.primary:active,.secondary:active,.wood-calculate:active,.round-add:active,.round-receipt-button:active,.menu-primary:active,.store-save:active,.ui-icon-btn:active{transform:scale(.98)}
+.ui-btn--primary:active,.primary:active,.wood-calculate:active,.round-add:active,.round-receipt-button:active,.menu-primary:active,.store-save:active{background:var(--c-primary-press)}
+.ui-btn:disabled,.primary:disabled,.secondary:disabled,.wood-calculate:disabled,.round-add:disabled,.round-receipt-button:disabled,.menu-primary:disabled,.store-save:disabled,.ui-icon-btn:disabled{background:var(--c-disabled-bg);color:var(--c-disabled-text);border-color:var(--c-disabled-bg);opacity:1;cursor:not-allowed;transform:none}
+.store-save{flex-direction:row;min-width:0;min-height:var(--h-button-sm);padding:0 var(--space-4);margin-left:auto}
+.ui-btn-row{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);margin:var(--space-4) 0}
+.ui-btn-row--stack{grid-template-columns:1fr}
+.ui-btn svg,.store-save svg{width:20px;height:20px;flex-shrink:0}
+
+/* Icon buttons */
+.ui-icon-btn{display:inline-grid;place-items:center;width:var(--h-icon);height:var(--h-icon);padding:0;border:1px solid var(--c-border-strong);border-radius:var(--radius-md);background:var(--c-surface);color:var(--c-primary);flex-shrink:0;cursor:pointer}
+.ui-icon-btn svg{width:20px;height:20px}
+
+/* Segmented control / tabs */
+.ui-segmented,.wood-system,.unit-picker{display:flex;gap:var(--space-1);padding:var(--space-1);background:var(--c-surface-2);border:1px solid var(--c-border);border-radius:var(--radius-md);overflow:visible;margin:var(--space-3) 0}
+.ui-segmented button,.tabs button,.wood-system button,.unit-picker button{flex:1;min-height:var(--h-button-sm);padding:0 var(--space-2);border:0;border-radius:var(--radius-sm);background:transparent;color:var(--c-text-2);font-size:var(--fs-body);font-weight:var(--fw-section);white-space:nowrap}
+.ui-segmented [aria-pressed=true],.tabs [aria-pressed=true],.wood-system .selected,.wood-system [aria-pressed=true],.unit-picker .active,.unit-picker [aria-pressed=true]{background:var(--c-primary);color:#fff;border-color:var(--c-primary);box-shadow:none}
+
+/* Inputs */
+.ui-field{display:block;min-width:0;margin:0}
+.ui-label{display:block;margin-bottom:var(--space-1);font-size:var(--fs-label);font-weight:var(--fw-label);color:var(--c-text-2)}
+.ui-control{display:flex;align-items:center;gap:var(--space-2);min-height:var(--h-input);padding:0 var(--space-3);background:#fffefa;border:1px solid var(--c-border-strong);border-radius:var(--radius-md)}
+.ui-control:focus-within{border-color:var(--c-primary);box-shadow:0 0 0 2px var(--c-primary-soft),0 0 0 3px var(--c-primary)}
+.ui-control .ui-input{flex:1;min-width:0;border:0;background:none;box-shadow:none;padding:0;margin:0;min-height:calc(var(--h-input) - 2px);outline:none}
+.ui-control .ui-unit{font-size:var(--fs-help);color:var(--c-text-2);white-space:nowrap}
+.ui-input,.form input,.form select,.search,.filters input,.filters select,.authCard input,.round-customer input,.round-customer textarea,.cut-fields input,.cut-fields select,.store-profile-fields input,.store-profile-fields textarea,.payment-input input,textarea,select{
+  box-sizing:border-box;width:100%;min-height:var(--h-input);padding:var(--space-2) var(--space-3);margin:0;background:#fffefa;color:var(--c-text);
+  border:1px solid var(--c-border-strong);border-radius:var(--radius-md);font-size:16px;font-weight:var(--fw-body);line-height:var(--lh-tight)}
+textarea,.ui-input--multiline{min-height:calc(var(--h-input) + var(--space-5));resize:vertical}
+.ui-input:focus,.form input:focus,.search:focus,.cut-fields input:focus,textarea:focus,select:focus{outline:none;border-color:var(--c-primary);box-shadow:0 0 0 3px var(--c-primary-soft),0 0 0 1px var(--c-primary)}
+.ui-field--error .ui-control,.ui-field--error .ui-input,.ui-input[aria-invalid=true]{border-color:var(--c-danger);background:#fffafa}
+.ui-field-error{display:block;margin-top:var(--space-1);font-size:var(--fs-help);color:var(--c-danger);font-weight:var(--fw-section)}
+.ui-field-error::before{content:"! ";font-weight:var(--fw-brand)}
+.ui-hint,.hint{font-size:var(--fs-help);font-weight:var(--fw-help);color:var(--c-text-2);line-height:var(--lh-body)}
+.ui-field .ui-hint{display:block;margin-top:var(--space-1)}
+.ui-fields{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)}
+.ui-fields--3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.ui-fields--1{grid-template-columns:1fr}
+.ui-fields .ui-span-2{grid-column:span 2}
+.ui-check{display:flex;align-items:center;gap:var(--space-2);min-height:var(--h-button-sm);font-size:var(--fs-body)}
+.ui-check input{width:24px;height:24px;min-height:0;accent-color:var(--c-primary)}
+
+/* Results */
+.ui-result{display:grid;gap:var(--space-4);padding:var(--space-4);margin:var(--space-4) 0;background:var(--c-primary-soft);border:1px solid var(--c-primary-border);border-radius:var(--radius-lg);box-shadow:var(--shadow-card);color:var(--c-text);min-width:0}
+.ui-result--2{grid-template-columns:1fr 1fr}
+.ui-result-item{min-width:0}
+.ui-result-item+.ui-result-item{border-left:1px solid var(--c-primary-border);padding-left:var(--space-4)}
+.ui-result-label{display:block;font-size:var(--fs-help);font-weight:var(--fw-section);letter-spacing:.04em;text-transform:uppercase;color:var(--c-text-2);margin-bottom:var(--space-1)}
+.ui-result-value{display:block;font-size:var(--fs-result);font-weight:var(--fw-result);line-height:var(--lh-tight);color:var(--c-text);overflow-wrap:anywhere}
+.ui-result-unit{font-size:var(--fs-body);font-weight:var(--fw-body);color:var(--c-text-2);margin-left:var(--space-1)}
+.ui-result--warn{background:var(--c-warn-bg);border-color:#e3c98a}
+
+/* Empty state, dialog */
+.ui-empty,.round-empty{display:flex;flex-direction:column;align-items:center;gap:var(--space-2);text-align:center;padding:var(--space-5) var(--space-4);background:var(--c-surface);border:1px dashed var(--c-border-strong);border-radius:var(--radius-lg);color:var(--c-text-2)}
+.ui-empty b,.round-empty b{font-size:var(--fs-body);font-weight:var(--fw-section);color:var(--c-text)}
+.ui-empty span,.round-empty span{font-size:var(--fs-help)}
+.ui-empty img,.round-empty img{width:120px;height:auto}
+.ui-dialog,.payment-dialog{width:min(420px,calc(100% - 2 * var(--space-4)));max-height:calc(100dvh - 2 * var(--space-4));overflow:auto;padding:var(--space-5);background:var(--c-surface);color:var(--c-text);border:1px solid var(--c-border);border-radius:var(--radius-lg);box-shadow:var(--shadow-float)}
+.ui-dialog::backdrop,.payment-dialog::backdrop{background:rgba(33,27,21,.45)}
+.ui-dialog h2,.payment-dialog h2{margin:0 0 var(--space-3)}
+
+/* Small utility text levels */
+.ui-text-help{font-size:var(--fs-help);color:var(--c-text-2)}
+.ui-stack{display:grid;gap:var(--space-4)}
+
+@media(max-width:380px){.ui-fields--3{grid-template-columns:1fr 1fr}.ui-result-value{font-size:24px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+.ui-btn-row .ui-span-2{grid-column:span 2}
+.payment-choices{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);margin:var(--space-3) 0}
+.payment-choices [aria-pressed=true]{background:var(--c-primary);color:#fff;border-color:var(--c-primary)}
+.payment-summary{padding:var(--space-4);background:var(--c-primary-soft);border:1px solid var(--c-primary-border);border-radius:var(--radius-md);margin:var(--space-3) 0}
+.payment-summary span{display:block;font-size:var(--fs-help);color:var(--c-text-2)}
+.payment-summary strong{display:block;font-size:var(--fs-result);font-weight:var(--fw-result);margin-top:var(--space-1);overflow-wrap:anywhere}
+.payment-badge{display:inline-flex;font-size:var(--fs-help);font-weight:var(--fw-section);padding:var(--space-1) var(--space-2);border-radius:var(--radius-pill);background:var(--c-warn-bg);color:var(--c-warn);flex-shrink:0}
+.payment-badge.paid{background:var(--c-success-bg);color:var(--c-success)}
+.sheet-mirror{margin:var(--space-3) 0}
+.sheet-mirror summary,.timber-billing summary,.timber-optional summary,.cutting-tool summary{min-height:var(--h-button-sm);display:flex;align-items:center;font-size:var(--fs-body);font-weight:var(--fw-section);cursor:pointer}
+.sheet-mirror>.ui-btn,.push-settings .ui-btn{margin:var(--space-2) var(--space-2) 0 0}
+.sheet-mirror>p,.push-settings>p{margin:var(--space-2) 0}
+.push-settings{margin:var(--space-4) 0}
+.menu-action{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:var(--h-button);padding:0 var(--space-1);border:0;border-bottom:1px solid var(--c-border);background:none;color:var(--c-primary);font-size:var(--fs-body);font-weight:var(--fw-section);text-align:left}
+.saved-receipt{align-items:flex-start;gap:var(--space-1)}
+.saved-receipt b{font-size:var(--fs-card);font-weight:var(--fw-card)}
+.saved-receipt span,.saved-receipt small{font-size:var(--fs-help);color:var(--c-text-2);margin:0}
+.saved-list{display:grid;gap:var(--space-3)}
+.ui-card--tool.wood-receipt{flex-direction:row;align-items:center;gap:var(--space-3);min-height:var(--h-button);height:auto;padding:var(--space-3) var(--space-4);margin:0;background:var(--c-primary-soft);border-color:var(--c-primary-border);color:var(--c-text);font-size:var(--fs-card);font-weight:var(--fw-card)}
+.ui-card--tool.wood-receipt b{font-size:var(--fs-card);font-weight:var(--fw-card)}
+.ui-card--tool.wood-receipt span:last-child{margin-left:auto;font-size:var(--fs-section);color:var(--c-primary)}
+.ui-card--tool.wood-card{padding:0;gap:0;height:auto;align-items:center;justify-content:flex-start;overflow:hidden;background:var(--c-surface);border-color:var(--c-border)}
+.wood-card .wood-unit{height:auto;min-height:var(--h-button-sm);font-size:var(--fs-help);font-weight:var(--fw-section);background:var(--c-surface-2);color:var(--c-text-2);border-bottom:1px solid var(--c-border)}
+.wood-card.metric .wood-unit{background:var(--c-surface-2)}
+.wood-card b{font-size:var(--fs-card);font-weight:var(--fw-card);line-height:var(--lh-tight);padding:var(--space-1) var(--space-2) var(--space-3)}
+.wood-dimension{font-size:var(--fs-body);font-weight:var(--fw-card);color:var(--c-primary);top:calc(var(--h-button-sm) + var(--space-2));left:var(--space-2)}
+.wood-grid{gap:var(--space-3)}
+.wood-business{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-2);margin:0;border:0;padding:0}
+.wood-business .ui-btn{width:100%}
+.wood-title-badge{display:none}
+.ui-empty{margin:var(--space-3) 0}
+.customer-tool>.ui-field,.report-dates{margin-bottom:var(--space-3)}
+.report-dates{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)}
+.baki-tool>.hint,.customer-tool>.hint,.report-tool>.hint{margin:0 0 var(--space-3)}
+.sheet-mirror summary,.timber-billing summary,.timber-optional summary,.cutting-tool summary{display:list-item;padding:var(--space-3) 0;min-height:0}
+.report-tabs button{font-size:var(--fs-label);padding:0 var(--space-1);min-width:0}
+.ui-segmented button{min-width:0}
+.brand{font-size:var(--fs-brand);font-weight:var(--fw-brand);letter-spacing:0}
+.header-name{font-size:var(--fs-section);font-weight:var(--fw-section)}
+.tag,.header-text .tag{font-size:var(--fs-help);font-weight:var(--fw-help)}
+.status{font-size:var(--fs-help);font-weight:var(--fw-section);padding:var(--space-1) var(--space-2)}
+sup{font-size:var(--fs-help)}
+.wood-dimension sup{font-size:var(--fs-help)}
+.ui-card>.ui-section-header:first-child{margin-top:0}
