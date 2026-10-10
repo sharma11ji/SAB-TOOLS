@@ -1,0 +1,14 @@
+import React,{useEffect,useRef,useState} from 'react';
+import {roundReceiptFilename,shareRoundReceipt} from './roundReceipt';
+import {roundReceiptImage,canvasPng} from './roundReceiptImage';
+import {storeRoundReceipt} from './roundReceiptStorage';
+import './roundWood.css';
+import {PageHeader,Button,ButtonRow} from './ui';
+export default function RoundReceiptView({receipt,userId,onBack,saved=false}) {
+ const [image,setImage]=useState(''),[file,setFile]=useState(null),[message,setMessage]=useState(''),[busy,setBusy]=useState(false),[kept,setKept]=useState(saved);
+ const saving=useRef(false);
+ useEffect(()=>{let current=true;setImage('');setFile(null);setMessage('');setKept(saved);(async()=>{try{await document.fonts.ready;const canvas=roundReceiptImage(receipt),blob=await canvasPng(canvas);if(current){setImage(canvas.toDataURL('image/png'));setFile(new File([blob],roundReceiptFilename(receipt),{type:'image/png'}));}}catch{if(current)setMessage('Could not create the image. Go back and try again.');}})();return()=>{current=false}},[receipt,saved]);
+ const save=async()=>{if(saving.current||kept)return;saving.current=true;setBusy(true);try{setMessage(await storeRoundReceipt(userId,receipt));setKept(true)}catch(e){setMessage(`Receipt was not saved: ${e.message}`)}finally{saving.current=false;setBusy(false)}};
+ const download=()=>{const url=URL.createObjectURL(file),a=document.createElement('a');a.href=url;a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);setMessage('Download requested. Check Downloads on your phone.')};
+ return <section className="round-receipt-page"><PageHeader title="Round wood receipt" onBack={onBack} backLabel={saved?'Back to Saved':'Back to calculator'}/>{!saved&&<Button variant="primary" block className="round-receipt-button" style={{marginBottom:'var(--space-3)'}} disabled={busy||kept} onClick={save}>{kept?'Saved':busy?'Saving...':'Save receipt'}</Button>}<ButtonRow className="round-receipt-actions"><Button disabled={!file} onClick={download}>Download PNG</Button><Button disabled={!file} onClick={async()=>{if(!await shareRoundReceipt(file))setMessage('File sharing is unavailable here. Download the PNG, then attach it in WhatsApp.')}}>Share receipt</Button></ButtonRow><p className="ui-hint">Choose WhatsApp from your phone's share menu. Nothing is sent automatically.</p>{message&&<p role="status" className="menu-feedback">{message}</p>}{image?<img className="round-receipt-image" src={image} alt="Round wood receipt with customer details, measurements, totals and optional price"/>:<p role="status">Creating image...</p>}<p className="ui-hint" style={{marginTop:'var(--space-3)'}}>{kept?'Saved snapshot. No payment or Baki entry is created.':'Tap Save receipt to keep this snapshot in Saved. Download/share alone does not save it there.'}</p></section>;
+}
