@@ -1,10 +1,5 @@
-// Length is in feet. Girth is the circumference in inches, not diameter.
-export function roundLogCft(length, girth) {
-  const l = Number(length), g = Number(girth);
-  if (!Number.isFinite(l) || !Number.isFinite(g) || l <= 0 || g <= 0) return null;
-  const volume = l * g * g / 2304;
-  return Number.isFinite(volume) && volume > 0 ? volume : null;
-}
+import { roundLogCft } from './woodCalculations.js';
+export { roundLogCft };
 export const CBM_TO_CFT = 35.3147;
 export const receiptUnit = value => value === 'CBM' ? 'CBM' : 'CFT';
 export const cftToUnit = (cft, unit) => receiptUnit(unit) === 'CBM' ? cft / CBM_TO_CFT : cft;
