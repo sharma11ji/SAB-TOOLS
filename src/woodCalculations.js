@@ -1,5 +1,12 @@
 const positive = value => String(value).trim() !== '' && Number.isFinite(Number(value)) && Number(value) > 0;
 const price = value => String(value).trim() !== '' && Number.isFinite(Number(value)) && Number(value) >= 0;
+// Length is in feet. Girth is the circumference in inches, not diameter.
+export function roundLogCft(length, girth) {
+  const l = Number(length), g = Number(girth);
+  if (!Number.isFinite(l) || !Number.isFinite(g) || l <= 0 || g <= 0) return null;
+  const volume = l * g * g / 2304;
+  return Number.isFinite(volume) && volume > 0 ? volume : null;
+}
 export function woodCalculation(kind, system, fields) {
   if (!['size','door','round'].includes(kind) || !['imperial','metric'].includes(system)) return null;
   const keys = kind === 'size' ? ['length','width','thickness'] : kind === 'door' ? ['length','width'] : ['length','girth'];
@@ -10,7 +17,7 @@ export function woodCalculation(kind, system, fields) {
   if (kind === 'size') perPiece = metric ? f.length * (f.width / 100) * (f.thickness / 100) : f.length * f.width * f.thickness / 144;
   // Door dimensions both use feet or metres. Logs retain the receipt's quarter-girth method.
   else if (kind === 'door') perPiece = f.length * f.width;
-  else perPiece = metric ? f.length * (f.girth / 400) ** 2 : f.length * f.girth ** 2 / 2304;
+  else perPiece = metric ? f.length * (f.girth / 400) ** 2 : roundLogCft(f.length, f.girth);
   const quantity = perPiece * f.pieces;
   const amount = Math.round((quantity * f.rate + Number.EPSILON) * 100) / 100;
   if (!Number.isFinite(quantity) || quantity <= 0 || !Number.isSafeInteger(Math.round(amount * 100))) return null;

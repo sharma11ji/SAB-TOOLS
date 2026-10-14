@@ -19,7 +19,7 @@ export async function storeReceipt(uid, record, expectedRevision = 0) {
   const ref = doc(db,'users',uid,'history',record.id), snapshot = await transaction.get(ref);
   const current = snapshot.exists() ? snapshot.data() : null;
   assertRevision(current, expectedRevision);
-  const {id, ...fields} = data;
+  const {_id, ...fields} = data;
   transaction.set(ref, {...fields, createdAt:current?.createdAt || serverTimestamp(), updatedAt:serverTimestamp()});
  });
  return 'Receipt saved to your cloud account.';

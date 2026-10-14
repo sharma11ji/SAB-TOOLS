@@ -1,9 +1,13 @@
-import{createUserWithEmailAndPassword,sendPasswordResetEmail,signInWithEmailAndPassword,signInWithPopup,signOut,onAuthStateChanged,setPersistence,browserLocalPersistence,updateProfile,sendEmailVerification}from"firebase/auth";
+import{createUserWithEmailAndPassword,sendPasswordResetEmail,signInWithEmailAndPassword,signInWithPopup,signInWithRedirect,getRedirectResult,signOut,onAuthStateChanged,setPersistence,browserLocalPersistence,updateProfile,sendEmailVerification}from"firebase/auth";
 import{auth,googleProvider,firebaseReady}from"./firebase";
 import{saveProfile}from"./firestore";
 export async function initAuthPersistence(){if(!auth||!firebaseReady)return false;await setPersistence(auth,browserLocalPersistence);return true}
 export function watchAuth(cb){
- if(auth)return onAuthStateChanged(auth,cb);
+ if(auth){
+  // Complete a Google redirect sign-in (mobile fallback) before auth state settles.
+  getRedirectResult(auth).then(cred=>{if(cred?.user)saveProfile(cred.user.uid,{displayName:cred.user.displayName||"",email:cred.user.email||"",emailVerified:cred.user.emailVerified,photoURL:cred.user.photoURL||"",provider:"google"}).catch(()=>{})}).catch(()=>{});
+  return onAuthStateChanged(auth,cb);
+ }
  // Firebase is optional for the calculator. Resolve the loading screen when
  // public deployments do not provide Firebase environment variables.
  cb(null);
@@ -11,7 +15,13 @@ export function watchAuth(cb){
 }
 export async function registerEmail({name,email,password}){if(!auth)throw new Error("Firebase is not configured.");const cred=await createUserWithEmailAndPassword(auth,email.trim(),password);if(name?.trim())await updateProfile(cred.user,{displayName:name.trim()});try{await sendEmailVerification(cred.user)}catch{}await saveProfile(cred.user.uid,{displayName:cred.user.displayName||name||"",email:cred.user.email||email,emailVerified:cred.user.emailVerified,photoURL:cred.user.photoURL||"",provider:"password"});return cred.user}
 export async function loginEmail(email,password){if(!auth)throw new Error("Firebase is not configured.");const cred=await signInWithEmailAndPassword(auth,email.trim(),password);await saveProfile(cred.user.uid,{displayName:cred.user.displayName||"",email:cred.user.email||email,emailVerified:cred.user.emailVerified,photoURL:cred.user.photoURL||"",provider:"password"});return cred.user}
-export async function loginGoogle(){if(!auth)throw new Error("Firebase is not configured.");const cred=await signInWithPopup(auth,googleProvider);await saveProfile(cred.user.uid,{displayName:cred.user.displayName||"",email:cred.user.email||"",emailVerified:cred.user.emailVerified,photoURL:cred.user.photoURL||"",provider:"google"});return cred.user}
+export async function loginGoogle(){if(!auth)throw new Error("Firebase is not configured.");try{const cred=await signInWithPopup(auth,googleProvider);await saveProfile(cred.user.uid,{displayName:cred.user.displayName||"",email:cred.user.email||"",emailVerified:cred.user.emailVerified,photoURL:cred.user.photoURL||"",provider:"google"});return cred.user}catch(e){
+  // Mobile browsers and strict popup blockers cannot complete the popup flow.
+  // Fall back to a full-page redirect; the result is picked up in watchAuth.
+  // A user-cancelled popup (popup-closed-by-user) must not trigger a redirect.
+  if(["auth/popup-blocked","auth/operation-not-supported-in-this-environment","auth/web-storage-unsupported"].includes(e?.code)){await signInWithRedirect(auth,googleProvider);return null}
+  throw e
+ }}
 export async function resetPassword(email){if(!auth)throw new Error("Firebase is not configured.");return sendPasswordResetEmail(auth,email.trim())}
 export async function logout(){if(auth)return signOut(auth)}
 export const authError=(e)=>{const c=e?.code||"";return({"auth/email-already-in-use":"This email already has an account. Try Login instead.","auth/invalid-email":"Enter a valid email address.","auth/weak-password":"Use a stronger password.","auth/invalid-credential":"Email or password is incorrect.","auth/user-not-found":"No account was found for this email.","auth/wrong-password":"Email or password is incorrect.","auth/too-many-requests":"Too many attempts. Please wait and try again.","auth/popup-closed-by-user":"Google sign-in was cancelled."}[c]||e?.message||"Authentication failed.")};

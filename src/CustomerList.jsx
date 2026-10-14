@@ -3,7 +3,7 @@ import {db} from './firebase';
 import {watchRecords} from './services/firestoreService';
 import {receiptKey, sortReceipts} from './receiptRecords';
 import {money} from './paymentLedger';
-import {buildCustomers, filterCustomers, callable, phoneDigits} from './customerList';
+import {buildCustomers, filterCustomers, callable} from './customerList';
 const dateLabel = date => String(date).split('-').reverse().join('/');
 const shortDate = date => {const p=String(date).split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0].slice(2)}`:date;};
 export default function CustomerList({userId, active}) {

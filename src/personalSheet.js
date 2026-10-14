@@ -54,7 +54,7 @@ export async function connectPersonalSheet(uid) {
         });
       } catch(error) {
         const link=config?.url ? ` Sheet created at ${config.url}.` : '';
-        throw new Error(`Setup needs recovery.${link} ${error.message} Do not reconnect to create another Sheet until this is checked.`);
+        throw new Error(`Setup needs recovery.${link} ${error.message} Do not reconnect to create another Sheet until this is checked.`, {cause:error});
       }
     }
   }
@@ -155,7 +155,7 @@ export async function replacePersonalSheet(uid) {
     return await readPersonalSheet(uid);
   } catch(error) {
     const link=sheet?.spreadsheetUrl?` Replacement Sheet: ${sheet.spreadsheetUrl}.`:'';
-    throw new Error(`Register recovery stopped.${link} ${error.message} Do not create another replacement. Cloud receipts stay safe; support must check the stored recovery state.`);
+    throw new Error(`Register recovery stopped.${link} ${error.message} Do not create another replacement. Cloud receipts stay safe; support must check the stored recovery state.`, {cause:error});
   }
 }
 const flushing=new Map();
