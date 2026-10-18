@@ -7,6 +7,7 @@ const TimberReceipt = lazy(() => import("./TimberReceipt"));
 const BakiHisab = lazy(() => import("./BakiHisab"));
 const CustomerList = lazy(() => import("./CustomerList"));
 const SaleReport = lazy(() => import("./SaleReport"));
+const Business = lazy(() => import("./Business"));
 const MenuPage = lazy(() => import("./MenuPages"));
 const RoundReceiptView = lazy(() => import('./RoundReceiptView'));
 const SavedReceipts = lazy(() => import("./ReceiptTools").then(m => ({default: m.SavedReceipts})));
@@ -32,7 +33,7 @@ export default function App(){
  const splash=<LaunchSplash/>;
  if(loading)return <>{splash}{null}</>;
  if(!user&&firebaseReady)return <>{splash}<AuthScreen mode={authMode} setMode={setAuthMode} online={online}/></>;
- return <>{splash}<div className="app"><header><HeaderBrand user={user} logoSrc={`${import.meta.env.BASE_URL}icons/1-timber-logo.png`}/><div className="headerRight"><span className={"status "+(online?"on":"off")}>{online?"Online":"Offline"}</span>{menuUser&&<div aria-label="Signed-in account"><AccountMenu key={menuUser.uid} user={menuUser} onLogout={logout} items={[["Home","Home"],["SizeWood","Size wood"],["FlushDoor","Flush door"],["RoundImperial","Round wood (ft/in)"],["RoundMetric","Round wood (metric)"],["Cutting","Cutting optimizer"],["Receipt","Receipt"],["Saved","Saved"],["Baki","Baki hisab"],["Customers","Customers"],["Report","Report"],["Level","Level"]]} activeItem={tab} onSelect={id=>id==="SizeWood"?openCalculator("size","imperial"):id==="FlushDoor"?openCalculator("door","imperial"):id==="RoundImperial"?openCalculator("round","imperial"):id==="RoundMetric"?openCalculator("round","metric"):setTab(id)}/></div>}</div></header><main>
+ return <>{splash}<div className="app"><header><HeaderBrand user={user} logoSrc={`${import.meta.env.BASE_URL}icons/1-timber-logo.png`}/><div className="headerRight"><span className={"status "+(online?"on":"off")}>{online?"Online":"Offline"}</span>{menuUser&&<div aria-label="Signed-in account"><AccountMenu key={menuUser.uid} user={menuUser} onLogout={logout} items={[["Home","Home"],["SizeWood","Size wood"],["FlushDoor","Flush door"],["RoundImperial","Round wood (ft/in)"],["RoundMetric","Round wood (metric)"],["Cutting","Cutting optimizer"],["Receipt","Receipt"],["Saved","Saved"],["Baki","Baki hisab"],["Customers","Customers"],["Business","Business"],["Report","Report"],["Level","Level"]]} activeItem={tab} onSelect={id=>id==="SizeWood"?openCalculator("size","imperial"):id==="FlushDoor"?openCalculator("door","imperial"):id==="RoundImperial"?openCalculator("round","imperial"):id==="RoundMetric"?openCalculator("round","metric"):setTab(id)}/></div>}</div></header><main>
  {!firebaseReady&&<p className="hint local-mode-banner">Local mode: Firebase is unavailable. You can create and save receipts on this device.</p>}
  <div hidden={tab!=="Home"}><WoodHome onSelect={setTab} onCalculator={openCalculator}/><UpdateNotifications user={user} active={tab==="Home"}/></div>
  <Suspense fallback={null}>
@@ -43,6 +44,7 @@ export default function App(){
  {visited.has("Receipt")&&<div hidden={tab!=="Receipt"}><TimberReceipt key={user?.uid||"local"} userId={user?.uid||"local"} initialReceipt={openedReceipt?.receipt.type!=="round-wood-receipt"&&openedReceipt?.uid===(user?.uid||"local")?openedReceipt.receipt:null}/></div>}
  {visited.has("Baki")&&<div hidden={tab!=="Baki"}><BakiHisab key={user?.uid||"local"} userId={user?.uid||"local"} active={tab==="Baki"}/></div>}
  {visited.has("Customers")&&<div hidden={tab!=="Customers"}><CustomerList key={user?.uid||"local"} userId={user?.uid||"local"} active={tab==="Customers"}/></div>}
+ {visited.has("Business")&&<div hidden={tab!=="Business"}><Business key={user?.uid||"local"} userId={user?.uid||"local"} active={tab==="Business"}/></div>}
  {visited.has("Report")&&<div hidden={tab!=="Report"}><SaleReport key={user?.uid||"local"} userId={user?.uid||"local"} active={tab==="Report"}/></div>}
  {visited.has("Saved")&&<div hidden={tab!=="Saved"}><SavedReceipts key={user?.uid||"local"} userId={user?.uid||"local"} active={tab==="Saved"} onOpen={receipt=>{if(receipt.type==="round-wood-receipt"){setOpenedReceipt({uid:user?.uid||"local",receipt});setTab("RoundSaved");window.scrollTo(0,0);return}if(!confirm("Open this saved receipt? Current unsaved entries will be replaced."))return;setOpenedReceipt({uid:user?.uid||"local",receipt:{...receipt}});setTab("Receipt")}}/></div>}{visited.has("Level")&&<div hidden={tab!=="Level"}><LevelTool active={tab==="Level"}/></div>}</Suspense></main></div></>;
 }
