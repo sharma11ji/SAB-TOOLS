@@ -157,12 +157,13 @@ export function projectTotals(project, transactions, materials, labour) {
   const mine = transactions.filter(tx => tx.projectId === project.id);
   const active = mine.filter(tx => tx.status === 'active');
   const payments = active.filter(tx => tx.type === 'payment').reduce((s, tx) => s + paise(tx.amount), 0);
-  const recorded = active.filter(tx => tx.type !== 'payment');
-  const recordedTotal = recorded.reduce((s, tx) => s + paise(tx.amount), 0);
   const autoMaterial = materialCost(materials.filter(m => m.projectId === project.id));
   const autoLabour = labourCost(labour.filter(l => l.projectId === project.id));
   const materialTx = paiseSum(active, 'material'), labourTx = paiseSum(active, 'labour'), otherTx = paiseSum(active, 'other-expense');
-  const cost = Math.max(recordedTotal, materialTx + labourTx + otherTx);
+  // Cost per bucket: a recorded expense transaction counts once; material and
+  // labour records fill the bucket only when no matching transaction exists,
+  // so entries are never double-counted.
+  const cost = Math.max(materialTx, autoMaterial) + Math.max(labourTx, autoLabour) + otherTx;
   const paid = payments, outstanding = Math.max(0, cost - paid);
   const budgetP = paise(project.budget || 0);
   return {

@@ -65,6 +65,22 @@ test('orphan transactions pointing at unknown projects are dropped on import', (
   assert.equal(plan.orphans, 1);
 });
 
+test('imported estimate number collisions get the next free number', () => {
+  const backup = {app: 'sab-tools-business-backup', version: 1, exportedAt: 't', records: {
+    estimates: [
+      {id: 'e1', number: 'EST-2026-1', customerId: 'c', lines: [{description: 'a', quantity: 1, rate: 100}], createdAt: 't'},
+      {id: 'e2', number: 'EST-2026-1', customerId: 'c', lines: [{description: 'b', quantity: 1, rate: 200}], createdAt: 't'}
+    ]}};
+  const plan = planImport('u6', backup);
+  assert.equal(plan.ok, true);
+  assert.equal(plan.add.estimates.length, 2);
+  const numbers = plan.add.estimates.map(e => e.number);
+  assert.equal(new Set(numbers).size, 2, 'numbers must be unique after renumbering');
+  assert.equal(plan.renumbered, 1);
+  const result = importBackup('u6', backup);
+  assert.equal(result.written.estimates, 2);
+});
+
 test('invalid backup import throws and writes nothing', () => {
   assert.throws(() => importBackup('u5', {app: 'nope'}), /not a SAB TOOLS/);
   assert.equal(readCollection('u5', 'customers').length, 0);

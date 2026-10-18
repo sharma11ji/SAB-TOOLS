@@ -119,6 +119,21 @@ test('transaction history is newest first and scoped to the project', () => {
   assert.equal(history[0].date, '2026-10-05');
 });
 
+test('cost includes material and labour records when no matching transactions exist', () => {
+  const p = saveProject('u11', {name: 'Records only'});
+  saveMaterial('u11', {projectId: p.id, name: 'Wood', quantity: '2', unitPrice: '500', unit: 'CFT'});
+  saveLabour('u11', {projectId: p.id, worker: 'Worker', quantity: '1', rate: '300'});
+  const rows = readCollection('u11', 'materials'), lab = readCollection('u11', 'labour');
+  const t = projectTotals(p, [], rows, lab);
+  assert.equal(t.cost, 1300, 'material 1000 + labour 300, not zero');
+  assert.equal(t.outstanding, 1300);
+  // partial: a material expense transaction for the same work is not double-counted
+  saveTransaction('u11', {projectId: p.id, type: 'material', amount: '1200', clientId: 'mm1'});
+  const t2 = projectTotals(p, readCollection('u11', 'transactions'), rows, lab);
+  assert.equal(t2.material, 1200, 'recorded transaction wins the bucket');
+  assert.equal(t2.cost, 1500, '1200 material + 300 labour, counted once each');
+});
+
 test('guest and account ledgers are isolated', () => {
   const g = saveProject('local', {name: 'Guest project'});
   const a = saveProject('acct-9', {name: 'Account project'});

@@ -2,6 +2,7 @@
 // Import never overwrites or deletes silently: existing ids are skipped and
 // conflicts are reported, and nothing is written until the user confirms.
 import {listAll, writeCollection, COLLECTIONS} from './businessStore.js';
+import {nextEstimateNumber} from './estimates.js';
 
 export const BACKUP_KIND = 'sab-tools-business-backup';
 export const BACKUP_VERSION = 1;
@@ -67,6 +68,20 @@ export function planImport(uid, parsed) {
   const projectIds = new Set([...(existing.projects || []).map(p => p.id), ...rows('projects')]);
   function rows(name) { return parsed.records[name] || []; }
   plan.orphans = 0;
+  // Two devices can both have created EST-<year>-1 offline. A collision is
+  // not a data conflict: the imported estimate keeps its content and gets the
+  // next free number, so every quotation stays identifiable.
+  plan.renumbered = 0;
+  {
+    const usedNumbers = new Set((existing.estimates || []).map(e => e.number));
+    for (const est of plan.add.estimates) {
+      if (usedNumbers.has(est.number)) {
+        est.number = nextEstimateNumber([...(existing.estimates || []), ...plan.add.estimates.filter(seen => seen !== est)], new Date().getFullYear());
+        plan.renumbered += 1;
+      }
+      usedNumbers.add(est.number);
+    }
+  }
   for (const collection of ['transactions', 'materials', 'labour']) {
     const before = plan.add[collection].length;
     plan.add[collection] = plan.add[collection].filter(row => projectIds.has(row.projectId));

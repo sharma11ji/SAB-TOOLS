@@ -176,7 +176,7 @@ function ProjectsSection({userId, refreshKey, bump}) {
         </select>
       </div>}
       {!projects.length && <p className="empty">No projects yet. A project holds the customer, materials, labour and money for one job.</p>}
-      {projects.map(project => {
+      {shown.map(project => {
         const t = projectTotals(project, readCollection(userId, 'transactions') || [], readCollection(userId, 'materials') || [], readCollection(userId, 'labour') || []);
         return (
           <article className="baki-card" key={project.id}>
@@ -442,7 +442,7 @@ function EstimatesSection({userId, refreshKey, bump}) {
 
 function EstimateEditor({userId, id, onBack, bump, customers, projects}) {
   const current = id ? (readCollection(userId, 'estimates') || []).find(e => e.id === id) : null;
-  const [form, setForm] = useState(current ? {...current} : {customerId: '', projectId: '', lines: [{description: '', quantity: '', rate: '', unit: ''}], transport: '', discount: '', estimateDate: today(), validUntil: '', businessName: '', businessPhone: '', terms: '', notes: '', status: 'draft'});
+  const [form, setForm] = useState(current ? {...current, businessName: current.snapshot?.businessName || '', businessPhone: current.snapshot?.businessPhone || '', terms: current.snapshot?.terms || '', notes: current.snapshot?.notes || ''} : {customerId: '', projectId: '', lines: [{description: '', quantity: '', rate: '', unit: ''}], transport: '', discount: '', estimateDate: today(), validUntil: '', businessName: '', businessPhone: '', terms: '', notes: '', status: 'draft'});
   const [error, setError] = useState('');
   const totals = estimateTotals({...form, lines: form.lines.map(line => ({...line, quantity: line.quantity || 0, rate: line.rate || 0}))});
   const setLine = (index, field, value) => setForm({...form, lines: form.lines.map((line, i) => i === index ? {...line, [field]: value} : line)});
