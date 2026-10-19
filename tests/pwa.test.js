@@ -5,7 +5,7 @@ import { mkdtempSync, writeFileSync, readFileSync, mkdirSync, rmSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { registerPWA } from "../src/pwa.js";
-import { stampServiceWorker } from "../build/pwaPlugin.js";
+import { stampServiceWorker } from "../src/pwaPlugin.js";
 
 class Target extends EventEmitter {
   addEventListener(type, fn) { this.on(type, fn); }
@@ -102,7 +102,7 @@ test("worker scopes caching, protects other windows, and retires legacy marker",
 });
 
 test("build injects rescue inline outside the hashed app module", async () => {
-  const { pwaBuildPlugin } = await import("../build/pwaPlugin.js");
+  const { pwaBuildPlugin } = await import("../src/pwaPlugin.js");
   const html = pwaBuildPlugin().transformIndexHtml.handler(readFileSync(new URL('../index.html', import.meta.url), 'utf8'));
   assert.ok(html.includes('<script>(function bootRecovery()'));
   assert.ok(!html.includes('<!-- BOOT_RECOVERY -->'));

@@ -1,2 +1,665 @@
-.wood-home,.wood-calculator{max-width:520px;margin:0 auto;color:#322719}.wood-home h1{font-size:26px;margin:0 0 16px}.wood-receipt{width:100%;border:1px solid #c9a65b;background:#f2e5c6;border-radius:13px;min-height:52px;display:flex;align-items:center;padding:12px 15px;gap:10px;margin-bottom:16px;font-size:14px;color:#322719}.wood-receipt span:last-child{margin-left:auto;font-size:20px;color:#8c6a29}.wood-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.wood-card{border:1px solid #e6d7bb;border-radius:16px;overflow:hidden;height:155px;background:#fffdf9;box-shadow:0 4px 10px #60401308;position:relative;padding:0;display:flex;align-items:center;flex-direction:column;color:#322719}.wood-unit{font-size:12px;background:#eee1c3;color:#735827;font-weight:600;height:31px;display:grid;place-items:center;border-bottom:1px solid #e5d4b0;width:100%;flex-shrink:0}.wood-card.metric .wood-unit{background:#f3ead8}.wood-card img{height:88px;width:100%;padding:4px 4px 0}.wood-dimension{position:absolute;top:38px;left:10px;font-size:15px;font-weight:700;color:#8d6b2f;background:#fffdf9cc;border-radius:5px;padding:2px 4px}.wood-dimension sup{font-size:9px}.wood-card b{font-size:14px;line-height:35px}.wood-business{margin-top:20px;border-top:1px solid #e4d9c5;padding-top:14px}.wood-business>span{font-size:11px;color:#8e7858}.wood-business>div{display:flex;flex-wrap:wrap;gap:4px;justify-content:space-between;margin-top:6px}.wood-business button{border:0;background:none;font-size:11px;font-weight:600;color:#68583d;padding:8px 4px;min-height:44px}.wood-back{border:0;background:none;font-size:12px;color:#89734f;margin-bottom:12px;padding:6px 0;min-height:36px}.wood-calculator h1{display:flex;align-items:center;gap:10px;font-size:25px;margin:0 0 15px}.wood-title-badge{font-size:13px;background:#ece0c4;padding:5px 8px;border-radius:7px;color:#876324}.wood-system{display:flex;background:#eee7db;border:1px solid #e3d8c5;padding:4px;border-radius:12px;gap:4px;min-height:46px}.wood-system button{flex:1;font-size:13px;padding:8px;border-radius:8px;color:#806e51;border:0;background:none;min-height:36px}.wood-system .selected{background:#b8862b;color:white;font-weight:600;box-shadow:0 2px 4px #62451420}.wood-diagram{height:120px;position:relative;margin:8px 0 10px;display:flex;align-items:center;justify-content:center}.wood-diagram img{height:105px;width:190px}.wood-diagram span{position:absolute;color:#8c6d35;font-size:10px;bottom:0}.wood-measure-form{background:#fffdf9;border:1px solid #e7ddc9;border-radius:15px;padding:16px}.wood-measure-form h2{font-size:13px;font-weight:700;margin:0 0 16px}.wood-fields{display:grid;grid-template-columns:1fr 1fr;gap:15px 13px}.wood-fields label{font-size:12px;color:#776345;display:block;min-width:0}.wood-input{margin-top:7px;min-height:45px;border:1px solid #e1d4ba;border-radius:9px;display:flex;align-items:center;background:#fffefa;padding:0 12px}.wood-input input{width:100%;min-width:0;border:0;background:none;font-size:17px;color:#3f3220;padding:12px 0;appearance:textfield}.wood-input input::-webkit-inner-spin-button,.wood-input input::-webkit-outer-spin-button{appearance:none}.wood-input>span{font-size:11px;color:#8b744f;white-space:nowrap;margin-left:8px}.wood-wide{grid-column:span 2}.wood-calculate{margin-top:16px;background:#b8862b;border:0;border-radius:11px;text-align:center;padding:14px;color:white;font-size:14px;font-weight:600;width:100%;min-height:48px}.wood-result{margin-top:15px;padding:16px;background:#f0e5cb;border:1px solid #dfcda3;border-radius:14px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}.wood-result>div:last-child{text-align:right;margin-left:auto}.wood-result span{font-size:10px;color:#806334;display:block;margin-bottom:7px;text-transform:uppercase;letter-spacing:.5px}.wood-result strong{font-size:22px;overflow-wrap:anywhere}.wood-result small{font-size:12px;font-weight:500}.wood-method{font-size:11px;color:#806b4b;text-align:center;margin:12px 0}.wood-error{background:#fde8e6;color:#8d2d27;padding:12px;border-radius:10px;font-size:12px}.wood-card:hover{border-color:#c7a767}.wood-card:focus-visible,.wood-system button:focus-visible{outline:2px solid #9e651e;outline-offset:2px}@media(max-width:360px){.wood-card b{font-size:13px}.wood-business>div{justify-content:flex-start}.wood-result strong{font-size:20px}}
-@media(max-width:480px){.wood-card{height:148px}.wood-card img{height:81px}.wood-diagram{height:105px}.wood-diagram img{height:94px}.wood-business{margin-top:16px}.wood-business>div{gap:0}.wood-business button{font-size:10px;padding:8px 3px}}
+/* Minimalist Apple-inspired SaaS Landing & Calculator Styling */
+.wood-home.saas-landing {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 28px 4px 56px;
+  color: #1d1d1f;
+}
+
+.saas-hero {
+  text-align: center;
+  max-width: 780px;
+  margin: 12px auto 52px;
+  padding: 0 12px;
+}
+
+.saas-eyebrow-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid #d2d2d7;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #1d1d1f;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.saas-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #1d1d1f;
+}
+
+.saas-hero-title {
+  font-size: clamp(34px, 5.5vw, 58px);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.06;
+  color: #1d1d1f;
+  margin: 0 auto 18px;
+}
+
+.saas-hero-subtitle {
+  font-size: clamp(15px, 2vw, 19px);
+  line-height: 1.55;
+  color: #6e6e73;
+  max-width: 640px;
+  margin: 0 auto 28px;
+  font-weight: 400;
+}
+
+.saas-hero-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 36px;
+}
+
+.saas-btn-primary {
+  min-height: 48px;
+  padding: 12px 26px;
+  border-radius: 999px;
+  border: 1px solid #1d1d1f;
+  background: #1d1d1f;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition: transform 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+}
+
+.saas-btn-primary:hover {
+  background: #000000;
+  transform: translateY(-1px);
+}
+
+.saas-btn-secondary {
+  min-height: 48px;
+  padding: 12px 24px;
+  border-radius: 999px;
+  border: 1px solid #d2d2d7;
+  background: rgba(255, 255, 255, 0.85);
+  color: #1d1d1f;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition: background 0.16s ease, border-color 0.16s ease;
+}
+
+.saas-btn-secondary:hover {
+  background: #ffffff;
+  border-color: #86868b;
+}
+
+/* Pill-shaped Search & Filter Controls */
+.saas-controls-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.saas-search-pill {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid #d2d2d7;
+  border-radius: 999px;
+  padding: 6px 18px;
+  min-height: 52px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.saas-search-pill:focus-within {
+  border-color: #1d1d1f;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+}
+
+.saas-search-pill svg {
+  width: 18px;
+  height: 18px;
+  color: #86868b;
+  flex-shrink: 0;
+}
+
+.saas-search-pill input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font-size: 15px;
+  color: #1d1d1f;
+  padding: 8px 0;
+  outline: none;
+}
+
+.saas-search-pill input::placeholder {
+  color: #86868b;
+}
+
+.saas-search-clear {
+  border: 0;
+  background: #f0f0f2;
+  color: #1d1d1f;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 15px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.saas-filter-pills {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.saas-pill {
+  min-height: 38px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: 1px solid #d2d2d7;
+  background: rgba(255, 255, 255, 0.75);
+  color: #515154;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition: all 0.16s ease;
+}
+
+.saas-pill:hover {
+  border-color: #86868b;
+  color: #1d1d1f;
+}
+
+.saas-pill.active {
+  background: #1d1d1f;
+  border-color: #1d1d1f;
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+}
+
+/* Editorial Sections & Clean Card Grid */
+.saas-section {
+  margin-top: 44px;
+}
+
+.saas-section-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e5e5ea;
+}
+
+.saas-section-kicker {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #86868b;
+  margin-bottom: 4px;
+}
+
+.saas-section-header h2 {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: #1d1d1f;
+  margin: 0;
+}
+
+.saas-section-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6e6e73;
+  background: #ebebf0;
+  padding: 5px 12px;
+  border-radius: 999px;
+}
+
+.wood-grid.saas-card-grid,
+.saas-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 18px;
+}
+
+.wood-card.saas-card,
+.saas-card {
+  border: 1px solid #e5e5ea;
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.035);
+  padding: 22px;
+  height: auto;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  text-align: left;
+  color: #1d1d1f;
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.wood-card.saas-card:hover,
+.saas-card:hover {
+  transform: translateY(-2px);
+  border-color: #1d1d1f;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.07);
+}
+
+.saas-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 14px;
+}
+
+.wood-unit,
+.saas-card-tag {
+  font-size: 11px;
+  font-weight: 600;
+  color: #515154;
+  background: #f5f5f7;
+  border: 1px solid #e5e5ea;
+  padding: 5px 12px;
+  border-radius: 999px;
+  height: auto;
+  width: auto;
+  display: inline-block;
+}
+
+.wood-card.metric .wood-unit {
+  background: #f0f0f3;
+}
+
+.wood-dimension,
+.saas-card-badge {
+  position: static;
+  font-size: 13px;
+  font-weight: 800;
+  color: #1d1d1f;
+  background: #f5f5f7;
+  border: 1px solid #d2d2d7;
+  border-radius: 999px;
+  padding: 4px 11px;
+}
+
+.wood-dimension sup {
+  font-size: 9px;
+}
+
+.saas-card-art {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fafafa;
+  border: 1px solid #f0f0f2;
+  border-radius: 14px;
+  height: 92px;
+  margin-bottom: 14px;
+  padding: 8px;
+}
+
+.wood-card.saas-card img {
+  height: 72px;
+  width: auto;
+  max-width: 100%;
+  padding: 0;
+  filter: grayscale(100%) contrast(1.1);
+}
+
+.saas-card-body {
+  flex: 1;
+}
+
+.wood-card.saas-card b,
+.saas-card-body b {
+  display: block;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: #1d1d1f;
+  margin-bottom: 4px;
+}
+
+.saas-card-sub {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #515154;
+  margin-bottom: 6px;
+}
+
+.saas-card-body p {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #6e6e73;
+  margin: 6px 0 0;
+}
+
+.saas-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f2;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1d1d1f;
+}
+
+.saas-empty-state {
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid #e5e5ea;
+  border-radius: 22px;
+  padding: 44px 24px;
+  margin-top: 28px;
+}
+
+.saas-empty-state b {
+  display: block;
+  font-size: 18px;
+  margin-bottom: 6px;
+}
+
+.saas-empty-state p {
+  color: #6e6e73;
+  font-size: 14px;
+  margin: 0 0 18px;
+}
+
+/* Single Wood Calculator Interior - Clean Monochrome Editorial */
+.wood-calculator {
+  max-width: 560px;
+  margin: 0 auto;
+  color: #1d1d1f;
+}
+
+.wood-back {
+  border: 1px solid #d2d2d7;
+  background: #ffffff;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin-bottom: 18px;
+  padding: 8px 16px;
+  min-height: 38px;
+}
+
+.wood-calculator h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin: 0 0 18px;
+}
+
+.wood-title-badge {
+  font-size: 13px;
+  background: #1d1d1f;
+  padding: 5px 11px;
+  border-radius: 999px;
+  color: #ffffff;
+}
+
+.wood-system {
+  display: flex;
+  background: #ebebf0;
+  border: 1px solid #d2d2d7;
+  padding: 4px;
+  border-radius: 999px;
+  gap: 4px;
+  min-height: 46px;
+}
+
+.wood-system button {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 999px;
+  color: #515154;
+  border: 0;
+  background: none;
+  min-height: 38px;
+}
+
+.wood-system .selected {
+  background: #1d1d1f;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
+}
+
+.wood-diagram {
+  height: 120px;
+  position: relative;
+  margin: 14px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: 1px solid #e5e5ea;
+  border-radius: 18px;
+}
+
+.wood-diagram img {
+  height: 92px;
+  width: 180px;
+  filter: grayscale(100%) contrast(1.1);
+}
+
+.wood-diagram span {
+  position: absolute;
+  color: #6e6e73;
+  font-size: 11px;
+  font-weight: 600;
+  bottom: 8px;
+}
+
+.wood-measure-form {
+  background: #ffffff;
+  border: 1px solid #e5e5ea;
+  border-radius: 22px;
+  padding: 22px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+
+.wood-measure-form h2 {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0 0 16px;
+  color: #1d1d1f;
+}
+
+.wood-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px 13px;
+}
+
+.wood-fields label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #515154;
+  display: block;
+  min-width: 0;
+}
+
+.wood-input {
+  margin-top: 7px;
+  min-height: 46px;
+  border: 1px solid #d2d2d7;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  background: #fafafa;
+  padding: 0 12px;
+}
+
+.wood-input:focus-within {
+  border-color: #1d1d1f;
+  background: #ffffff;
+}
+
+.wood-input input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: none;
+  font-size: 17px;
+  color: #1d1d1f;
+  padding: 12px 0;
+  appearance: textfield;
+}
+
+.wood-input input::-webkit-inner-spin-button,
+.wood-input input::-webkit-outer-spin-button {
+  appearance: none;
+}
+
+.wood-input > span {
+  font-size: 11px;
+  font-weight: 600;
+  color: #86868b;
+  white-space: nowrap;
+  margin-left: 8px;
+}
+
+.wood-wide {
+  grid-column: span 2;
+}
+
+.wood-calculate {
+  margin-top: 18px;
+  background: #1d1d1f;
+  border: 0;
+  border-radius: 999px;
+  text-align: center;
+  padding: 14px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  width: 100%;
+  min-height: 48px;
+}
+
+.wood-result {
+  margin-top: 16px;
+  padding: 20px;
+  background: #1d1d1f;
+  color: #ffffff;
+  border-radius: 20px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.wood-result > div:last-child {
+  text-align: right;
+  margin-left: auto;
+}
+
+.wood-result span {
+  font-size: 10px;
+  color: #a1a1a6;
+  display: block;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.wood-result strong {
+  font-size: 24px;
+  overflow-wrap: anywhere;
+  color: #ffffff;
+}
+
+.wood-result small {
+  font-size: 12px;
+  font-weight: 500;
+  color: #d2d2d7;
+}
+
+.wood-method {
+  font-size: 12px;
+  color: #6e6e73;
+  text-align: center;
+  margin: 14px 0;
+}
+
+.wood-error {
+  background: #fde8e6;
+  color: #8d2d27;
+  padding: 12px 16px;
+  border-radius: 14px;
+  font-size: 13px;
+}
+
+.wood-card:focus-visible,
+.wood-system button:focus-visible,
+.saas-pill:focus-visible {
+  outline: 2px solid #1d1d1f;
+  outline-offset: 2px;
+}
+
+@media (max-width: 600px) {
+  .wood-grid.saas-card-grid,
+  .saas-card-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .wood-card.saas-card,
+  .saas-card {
+    padding: 16px;
+    border-radius: 18px;
+    min-height: 190px;
+  }
+  .saas-card-body p {
+    font-size: 12px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+@media (max-width: 400px) {
+  .wood-grid.saas-card-grid,
+  .saas-card-grid {
+    grid-template-columns: 1fr;
+  }
+}

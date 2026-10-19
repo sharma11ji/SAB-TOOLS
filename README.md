@@ -1,55 +1,53 @@
-# SAB TOOLS
+# SAB TOOLS (Android)
 
-Smart Tools for Carpenters & Furniture Workers.
+Smart Tools for Carpenters & Furniture Workers — Native Android application built with Kotlin and Jetpack Compose.
 
-A mobile-first PWA with wood calculators, timber receipts and a smart
-cutting optimizer. Works offline and can be used without an account
-(local mode); signing in syncs receipts and business records to the
-user's own Firestore space.
+SAB TOOLS provides essential woodworking, saw mill, and furniture business utilities designed for speed, precision, and complete offline capability.
 
 ## Features
-- Wood calculators: plank (L x W x T), door/ply area, and round wood
-  using the quarter-girth formula, each in Foot/Inch and Meter/cm.
-- Timber receipts with CFT/CBM totals, rates, labour/transport and
-  balance; save, share and print.
-- Smart cutting optimizer with offcut stock reuse, workshop mode and
-  printable plans.
-- Business tools: saved receipts, baki hisab (udhaar ledger), customer
-  list, sale report and a bubble level.
-- PWA: installable, offline after first load, safe update prompt and
-  automatic shell recovery.
 
-## Stack
-React + Vite front end. Firebase (Auth + Firestore) is optional: without
-`VITE_FIREBASE_*` env values the app runs in local mode and keeps data on
-the device. Calculations are pure local JavaScript and never need the
-network.
+### 1. Wood Calculators
+- **Round Wood (Logs)**: Imperial (CFT) and Metric (CBM) using the standard forestry quarter-girth formula:
+  - CFT: `Length(ft) × Girth(in)² ÷ 2304`
+  - CBM: `Length(m) × (Girth(cm) ÷ 400)²`
+- **Multi-Log Logbook & Table**: Add multiple tree logs with live total volume, pieces count, unit rate, and total amount calculation.
+- **Size Wood (Sawn Planks)**: Rectangular lumber calculation:
+  - CFT: `Length(ft) × Width(in) × Thickness(in) ÷ 144`
+  - CBM: `Length(m) × (Width(cm) ÷ 100) × (Thickness(cm) ÷ 100)`
+- **Flush Door & Plywood Area**: Surface area calculation in square feet and square metres.
 
-## Commands
-```
-npm install
-npm run dev     # local dev server
-npm test        # node:test unit suite
-npm run lint    # eslint
-npm run build   # production build into dist/
-```
+### 2. Timber Billing & Invoicing
+- Full-featured timber sales invoice generator:
+  - Shop & saw mill branding, receipt number, date.
+  - Customer name, mobile number, and village address.
+  - Multi-item timber log lines with individual measurements and rates.
+  - Wood value, labour charges, transport charges, advance paid, and balance due.
+  - "Save as Paid" or "Save as Pending" payment classification.
 
-## Verification scripts
-```
-node scripts/verifyPwa.mjs       # offline, update and SW recovery flows
-node scripts/verifyCutting.mjs   # cutting optimizer end-to-end in a browser
-```
-Both serve `dist/` locally and drive a real browser via playwright-core
-(`PLAYWRIGHT_MODULE` and `CHROME_BIN` env vars select the module and
-browser binary).
+### 3. 2D Guillotine Cutting Optimizer
+- Multi-start guillotine sheet packing algorithm.
+- Input stock sheets and required cut parts with grain direction and rotation preferences.
+- Configurable blade kerf loss and edge trim margins.
+- Visual canvas sheet diagram preview with parts placed and cut lines.
+- Material efficiency metrics (% used vs % waste) and reusable offcuts list.
 
-## Firebase setup (optional, for sign-in + cloud sync)
-1. Enable the Google and Email/Password providers in Firebase Auth.
-2. Add the deployed domain to Auth authorized domains.
-3. Put the web app values in `.env` (see `.env.example`).
-4. Deploy `firestore.rules` (per-user data isolation).
+### 4. Baki Hisab (Credit / Ledger Management)
+- Tracks outstanding customer balances from timber receipts.
+- Segregated tabs for "Pending" and "Paid" history.
+- Quick "Mark Paid" and partial payment collection with instant balance reconciliation.
 
-## Deployment
-GitHub Actions builds and deploys `dist/` to GitHub Pages on pushes to
-`main` (see `.github/workflows/`). The site is served under the
-`/SAB-TOOLS/` base path.
+### 5. Customer Directory & Sales Reports
+- **Customer List**: Automatically aggregated from saved receipts with phone dialing and purchase history.
+- **Sale Report**: Financial performance analytics for Today, This Week, This Month, and All Time, including top customer rankings.
+
+### 6. Workshop Tools
+- **Bubble Level**: Hardware accelerometer spirit level with tilt readouts, level indicator (within 2°), and surface zero-calibration.
+- **User Manual**: Reference guide and mathematical formulas for carpenters.
+
+## Architecture & Technology Stack
+- **UI Framework**: Jetpack Compose with Material Design 3 (M3).
+- **Architecture**: MVVM with unidirectional data flow and Kotlin Coroutines/Flow.
+- **Local Persistence**: Room SQLite database (`AppDatabase`) with reactive DAO queries.
+- **Sensors**: Android `SensorManager` with `Sensor.TYPE_ACCELEROMETER` for real-time bubble level tilt.
+- **Language**: Kotlin 2.1.0 with Gradle Kotlin DSL (`build.gradle.kts`).
+- **SDK Target**: Min SDK 26 (Android 8.0), Target SDK 35.

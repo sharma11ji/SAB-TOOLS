@@ -4,7 +4,7 @@ const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright-c
 import { createServer } from 'node:http';
 import { readFileSync, cpSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, extname } from 'node:path';
-import { stampServiceWorker } from '../build/pwaPlugin.js';
+import { stampServiceWorker } from '../src/pwaPlugin.js';
 import { fileURLToPath } from 'node:url';
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const root='/tmp/pwa-browser/releases'; mkdirSync(root,{recursive:true});

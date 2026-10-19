@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { buildSync } from "esbuild";
-import { bootRecovery } from "../src/bootRecovery.js";
+import { bootRecovery } from "./bootRecovery.js";
 
 // Include the actual built shell, not source filenames or a manually bumped version.
 export function stampServiceWorker(outDir) {
@@ -45,8 +45,7 @@ export function pwaBuildPlugin() {
       const pushConfig = env.VITE_FIREBASE_VAPID_KEY ? Object.fromEntries([
         ["apiKey",env.VITE_FIREBASE_API_KEY],["authDomain",env.VITE_FIREBASE_AUTH_DOMAIN],
         ["projectId",env.VITE_FIREBASE_PROJECT_ID],["messagingSenderId",env.VITE_FIREBASE_MESSAGING_SENDER_ID],
-        ["appId",env.VITE_FIREBASE_APP_ID],
-      ]) : null;
+        ["appId",env.VITE_FIREBASE_APP_ID],      ]) : null;
       const bundled = buildSync({ entryPoints:[join(config.root,"src/pushWorker.js")], bundle:true,
         write:false, format:"iife", platform:"browser", minify:true,
         define:{__FIREBASE_PUSH_CONFIG__:JSON.stringify(pushConfig)} }).outputFiles[0].text;
