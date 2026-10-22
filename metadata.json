@@ -1,8 +1,0 @@
-{
-  "name": "SAB TOOLS",
-  "description": "Smart tools for carpenters and furniture workers: wood calculators, timber receipt billing, cutting optimizer, baki hisab payment ledger, and bubble level.",
-  "requestFramePermissions": [],
-  "majorCapabilities": [
-    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
-  ]
-}
